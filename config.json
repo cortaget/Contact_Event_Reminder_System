@@ -1,0 +1,11 @@
+{
+    "database": {
+        "server": "Cronos\\SQLEXPRESS01",
+        "database": "Contact_Event_Reminder_System",
+        "driver": "ODBC Driver 17 for SQL Server",
+        "trusted_connection": true
+    },
+    "settings": {
+        "default_reminder_days": 7
+    }
+}
