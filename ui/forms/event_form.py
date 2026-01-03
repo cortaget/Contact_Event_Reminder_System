@@ -3,6 +3,7 @@ from datetime import datetime
 from models import Event
 from repositories.event_repository import EventRepository
 from repositories.person_repository import PersonRepository
+from repositories.event_type_repository import EventTypeRepository
 
 
 class EventFormDialog(ctk.CTkToplevel):
@@ -11,11 +12,12 @@ class EventFormDialog(ctk.CTkToplevel):
 
         self.event_repo = EventRepository()
         self.person_repo = PersonRepository()
+        self.event_type_repo = EventTypeRepository()
         self.event_id = event_id
         self.on_save_callback = on_save_callback
 
         self.title("Upravit událost" if event_id else "Přidat událost")
-        self.geometry("550x550")
+        self.geometry("550x600")
         self.resizable(False, False)
 
         self.transient(parent)
@@ -36,10 +38,10 @@ class EventFormDialog(ctk.CTkToplevel):
         title.pack(padx=20, pady=(20, 10), anchor="w")
 
         # Форма
-        form_frame = ctk.CTkFrame(self)
+        form_frame = ctk.CTkScrollableFrame(self, height=400)
         form_frame.pack(padx=20, pady=10, fill="both", expand=True)
 
-        # Osoba (выбор из списка)
+        # Osoba
         ctk.CTkLabel(form_frame, text="Osoba *", anchor="w").grid(
             row=0, column=0, padx=10, pady=(10, 5), sticky="w"
         )
@@ -59,20 +61,38 @@ class EventFormDialog(ctk.CTkToplevel):
             self.person_combo.set(person_names[0])
 
         # Typ události
+        # Typ události
         ctk.CTkLabel(form_frame, text="Typ události *", anchor="w").grid(
             row=2, column=0, padx=10, pady=(10, 5), sticky="w"
         )
 
-        self.event_type_var = ctk.StringVar(value="birthday")
+        # Создаём контейнер для ComboBox + кнопка
         type_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        type_frame.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="w")
+        type_frame.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="ew")
 
-        ctk.CTkRadioButton(type_frame, text="🎂 Narozeniny", variable=self.event_type_var, value="birthday").pack(
-            side="left", padx=5)
-        ctk.CTkRadioButton(type_frame, text="💍 Výročí", variable=self.event_type_var, value="anniversary").pack(
-            side="left", padx=5)
-        ctk.CTkRadioButton(type_frame, text="🎉 Jiné", variable=self.event_type_var, value="other").pack(side="left",
-                                                                                                        padx=5)
+        # ComboBox с типами
+        event_types = self.event_type_repo.get_all()
+        self.event_type_map = {et.name: et.id for et in event_types}
+        type_names = list(self.event_type_map.keys())
+
+        self.event_type_combo = ctk.CTkComboBox(
+            type_frame,
+            values=type_names if type_names else ["birthday"],
+            width=300,
+            state="readonly"
+        )
+        self.event_type_combo.pack(side="left", padx=(0, 5))
+        if type_names:
+            self.event_type_combo.set(type_names[0])
+
+        # Кнопка добавления нового типа
+        ctk.CTkButton(
+            type_frame,
+            text="+ Nový typ",
+            command=self.add_new_event_type,
+            width=90,
+            fg_color="green"
+        ).pack(side="left")
 
         # Datum události
         ctk.CTkLabel(form_frame, text="Datum události (DD.MM.YYYY) *", anchor="w").grid(
@@ -81,7 +101,7 @@ class EventFormDialog(ctk.CTkToplevel):
         self.event_date_entry = ctk.CTkEntry(form_frame, width=400, placeholder_text="15.05.2026")
         self.event_date_entry.grid(row=5, column=0, padx=10, pady=(0, 10), sticky="ew")
 
-        # Připomenutí (дней до события)
+        # Připomenout za (dní)
         ctk.CTkLabel(form_frame, text="Připomenout za (dní) *", anchor="w").grid(
             row=6, column=0, padx=10, pady=(10, 5), sticky="w"
         )
@@ -89,11 +109,19 @@ class EventFormDialog(ctk.CTkToplevel):
         self.reminder_days_entry.insert(0, "7")
         self.reminder_days_entry.grid(row=7, column=0, padx=10, pady=(0, 10), sticky="ew")
 
+        # Čas upozornění
+        ctk.CTkLabel(form_frame, text="Čas upozornění (HH:MM)", anchor="w").grid(
+            row=8, column=0, padx=10, pady=(10, 5), sticky="w"
+        )
+        self.reminder_time_entry = ctk.CTkEntry(form_frame, width=400, placeholder_text="09:00")
+        self.reminder_time_entry.insert(0, "09:00")
+        self.reminder_time_entry.grid(row=9, column=0, padx=10, pady=(0, 10), sticky="ew")
+
         form_frame.grid_columnconfigure(0, weight=1)
 
         # Кнопки
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(padx=20, pady=20, fill="x")
+        btn_frame.pack(padx=20, pady=(5, 10), fill="x")
 
         ctk.CTkButton(
             btn_frame,
@@ -116,7 +144,7 @@ class EventFormDialog(ctk.CTkToplevel):
         if not event:
             return
 
-        # Найти и установить Person
+        # Person
         person = self.person_repo.get_person(event.person_id)
         if person:
             person_str = f"{person.first_name} {person.last_name} (ID: {person.id})"
@@ -124,7 +152,10 @@ class EventFormDialog(ctk.CTkToplevel):
                 self.person_combo.set(person_str)
 
         # Тип события
-        self.event_type_var.set(event.event_type)
+        if event.event_type_id:
+            event_type = self.event_type_repo.get_by_id(event.event_type_id)
+            if event_type and event_type.name in self.event_type_map:
+                self.event_type_combo.set(event_type.name)
 
         # Дата
         if event.event_date:
@@ -135,9 +166,14 @@ class EventFormDialog(ctk.CTkToplevel):
         self.reminder_days_entry.delete(0, 'end')
         self.reminder_days_entry.insert(0, str(event.reminder_days_before))
 
+        # Время напоминания
+        if event.reminder_time:
+            self.reminder_time_entry.delete(0, 'end')
+            self.reminder_time_entry.insert(0, event.reminder_time.strftime('%H:%M'))
+
     def save_event(self):
         """Сохранить событие"""
-        # Валидация
+        # Person
         selected_person_str = self.person_combo.get()
         if selected_person_str not in self.person_dict:
             self.show_error("Vyberte prosím osobu!")
@@ -145,7 +181,14 @@ class EventFormDialog(ctk.CTkToplevel):
 
         person_id = self.person_dict[selected_person_str]
 
-        # Парсинг даты
+        # Тип события
+        event_type_name = self.event_type_combo.get()
+        event_type_id = self.event_type_map.get(event_type_name)
+        if not event_type_id:
+            self.show_error("Vyberte typ události!")
+            return
+
+        # Дата
         event_date_str = self.event_date_entry.get().strip()
         if not event_date_str:
             self.show_error("Datum události je povinné!")
@@ -166,13 +209,24 @@ class EventFormDialog(ctk.CTkToplevel):
             self.show_error("Počet dní musí být kladné číslo!")
             return
 
-        # Создание/обновление Event
+        # Время напоминания
+        reminder_time = None
+        time_str = self.reminder_time_entry.get().strip()
+        if time_str:
+            try:
+                reminder_time = datetime.strptime(time_str, '%H:%M').time()
+            except ValueError:
+                self.show_error("Neplatný čas! Použijte formát HH:MM (např. 17:45)")
+                return
+
+        # Создание события
         event = Event(
             id=self.event_id,
             person_id=person_id,
-            event_type=self.event_type_var.get(),
+            event_type_id=event_type_id,
             event_date=event_date,
-            reminder_days_before=reminder_days
+            reminder_days_before=reminder_days,
+            reminder_time=reminder_time
         )
 
         try:
@@ -188,6 +242,89 @@ class EventFormDialog(ctk.CTkToplevel):
 
         except Exception as e:
             self.show_error(f"Chyba při ukládání: {str(e)}")
+
+    def add_new_event_type(self):
+        """Добавить новый тип события"""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Přidat typ události")
+        dialog.geometry("400x220")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        ctk.CTkLabel(
+            dialog,
+            text="🎉 Nový typ události",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(padx=20, pady=(20, 10))
+
+        ctk.CTkLabel(
+            dialog,
+            text="Název typu:",
+            anchor="w"
+        ).pack(padx=20, pady=(10, 5), anchor="w")
+
+        name_entry = ctk.CTkEntry(dialog, width=360, placeholder_text="Např: wedding, graduation, meeting...")
+        name_entry.pack(padx=20, pady=(0, 10))
+
+        # Информация
+        ctk.CTkLabel(
+            dialog,
+            text="💡 Tip: Použijte anglické názvy (birthday, wedding...)",
+            font=ctk.CTkFont(size=11),
+            text_color="gray"
+        ).pack(padx=20, pady=(0, 10))
+
+        def save_type():
+            name = name_entry.get().strip().lower()
+            if not name:
+                error = ctk.CTkLabel(dialog, text="❌ Název je povinný!", text_color="red")
+                error.pack(padx=20, pady=5)
+                return
+
+            try:
+                # Добавляем в БД
+                new_id = self.event_type_repo.add(name)
+
+                # Обновляем ComboBox
+                self.event_type_map[name] = new_id
+                type_names = list(self.event_type_map.keys())
+                self.event_type_combo.configure(values=type_names)
+                self.event_type_combo.set(name)  # Выбираем новый тип
+
+                dialog.destroy()
+
+                # Показать успех
+                success_dialog = ctk.CTkToplevel(self)
+                success_dialog.title("Úspěch")
+                success_dialog.geometry("300x120")
+                success_dialog.resizable(False, False)
+                success_dialog.transient(self)
+                success_dialog.grab_set()
+
+                ctk.CTkLabel(
+                    success_dialog,
+                    text=f"✅ Typ '{name}' byl přidán!",
+                    font=ctk.CTkFont(size=14)
+                ).pack(padx=20, pady=20)
+
+                ctk.CTkButton(
+                    success_dialog,
+                    text="OK",
+                    command=success_dialog.destroy,
+                    width=100
+                ).pack(pady=10)
+
+            except Exception as e:
+                error = ctk.CTkLabel(dialog, text=f"❌ Chyba: {str(e)}", text_color="red")
+                error.pack(padx=20, pady=5)
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(padx=20, pady=10)
+
+        ctk.CTkButton(btn_frame, text="❌ Zrušit", command=dialog.destroy, width=100).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="💾 Uložit", command=save_type, width=100, fg_color="green").pack(side="left",
+                                                                                                       padx=5)
 
     def show_error(self, message):
         """Показать ошибку"""

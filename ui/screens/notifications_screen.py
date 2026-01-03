@@ -71,74 +71,104 @@ class NotificationsScreen(BaseScreen):
             label = ctk.CTkLabel(self.table_frame, text=header, font=ctk.CTkFont(weight="bold"))
             label.grid(row=0, column=idx, padx=10, pady=5, sticky="w")
 
-        # Получить уведомления с фильтрацией
-        filter_type = self.filter_var.get()
-        if filter_type == "all":
-            notifications = self.notification_repo.get_all_notifications()
-        elif filter_type == "planned":
-            notifications = self.notification_repo.get_pending_notifications()
-        else:
-            # Получить все и отфильтровать по статусу
-            all_notifications = self.notification_repo.get_all_notifications()
-            notifications = [n for n in all_notifications if n.status == filter_type]
+        try:
+            # Получить уведомления с фильтрацией
+            filter_type = self.filter_var.get()
+            if filter_type == "all":
+                notifications = self.notification_repo.get_all_notifications()
+            elif filter_type == "planned":
+                notifications = self.notification_repo.get_pending_notifications()
+            else:
+                all_notifications = self.notification_repo.get_all_notifications()
+                notifications = [n for n in all_notifications if n.status == filter_type]
 
-        # Кэш событий и людей
-        events_cache = {}
-        persons_cache = {}
+            # Кэш событий и людей
+            events_cache = {}
+            persons_cache = {}
 
-        for idx, notification in enumerate(notifications, start=1):
-            # Получить событие
-            if notification.event_id not in events_cache:
-                events_cache[notification.event_id] = self.event_repo.get_event(notification.event_id)
-            event = events_cache[notification.event_id]
+            # Импорт для работы с типами событий
+            from repositories.event_type_repository import EventTypeRepository
+            event_type_repo = EventTypeRepository()
 
-            # Получить человека
-            person_name = "N/A"
-            if event and event.person_id not in persons_cache:
-                persons_cache[event.person_id] = self.person_repo.get_person(event.person_id)
+            for idx, notification in enumerate(notifications, start=1):
+                # Получить событие
+                event = None
+                if notification.event_id not in events_cache:
+                    try:
+                        events_cache[notification.event_id] = self.event_repo.get_event(notification.event_id)
+                    except:
+                        events_cache[notification.event_id] = None
+                event = events_cache[notification.event_id]
 
-            if event and event.person_id in persons_cache:
-                person = persons_cache[event.person_id]
-                if person:
-                    person_name = f"{person.first_name} {person.last_name}"
+                # Получить человека и тип события
+                person_name = "N/A"
+                event_type_name = "N/A"
 
-            event_type = event.event_type if event else "N/A"
-            sent_time = notification.sent_at.strftime('%d.%m.%Y %H:%M') if notification.sent_at else 'N/A'
+                if event:
+                    # Получаем тип события по ID
+                    if event.event_type_id:
+                        try:
+                            et = event_type_repo.get_by_id(event.event_type_id)
+                            event_type_name = et.name if et else "N/A"
+                        except:
+                            event_type_name = "N/A"
 
-            # Иконка статуса
-            status_icons = {'planned': '⏳', 'sent': '✓', 'failed': '✗'}
-            status_icon = status_icons.get(notification.status, '?')
-            status_text = f"{status_icon} {notification.status}"
+                    # Получаем человека
+                    if event.person_id not in persons_cache:
+                        try:
+                            persons_cache[event.person_id] = self.person_repo.get_person(event.person_id)
+                        except:
+                            persons_cache[event.person_id] = None
 
-            # Кнопка выбора
-            select_btn = ctk.CTkButton(
-                self.table_frame,
-                text="◉",
-                width=40,
-                command=lambda n_id=notification.id, btn_idx=idx - 1: self.select_notification(n_id, btn_idx)
-            )
-            select_btn.grid(row=idx, column=0, padx=5, pady=2)
-            self.notification_buttons.append(select_btn)
+                    person = persons_cache.get(event.person_id)
+                    if person:
+                        person_name = f"{person.first_name} {person.last_name}"
 
-            # Остальные колонки
-            values = [
-                str(notification.id),
-                event_type,
-                person_name,
-                sent_time,
-                status_text
-            ]
+                sent_time = notification.sent_at.strftime('%d.%m.%Y %H:%M') if notification.sent_at else 'N/A'
 
-            for col_idx, value in enumerate(values, start=1):
-                label = ctk.CTkLabel(self.table_frame, text=value)
-                label.grid(row=idx, column=col_idx, padx=10, pady=2, sticky="w")
+                # Иконка статуса
+                status_icons = {'planned': '⏳', 'sent': '✓', 'failed': '✗'}
+                status_icon = status_icons.get(notification.status, '?')
+                status_text = f"{status_icon} {notification.status}"
 
-        if not notifications:
+                # Кнопка выбора
+                select_btn = ctk.CTkButton(
+                    self.table_frame,
+                    text="◉",
+                    width=40,
+                    command=lambda n_id=notification.id, btn_idx=idx - 1: self.select_notification(n_id, btn_idx)
+                )
+                select_btn.grid(row=idx, column=0, padx=5, pady=2)
+                self.notification_buttons.append(select_btn)
+
+                # Остальные колонки
+                values = [
+                    str(notification.id),
+                    event_type_name,
+                    person_name,
+                    sent_time,
+                    status_text
+                ]
+
+                for col_idx, value in enumerate(values, start=1):
+                    label = ctk.CTkLabel(self.table_frame, text=value)
+                    label.grid(row=idx, column=col_idx, padx=10, pady=2, sticky="w")
+
+            if not notifications:
+                ctk.CTkLabel(
+                    self.table_frame,
+                    text="Žádná upozornění",
+                    text_color="gray"
+                ).grid(row=1, column=0, columnspan=6, pady=20)
+
+        except Exception as e:
             ctk.CTkLabel(
                 self.table_frame,
-                text="Žádná upozornění",
-                text_color="gray"
+                text=f"Chyba načítání: {str(e)}",
+                text_color="red"
             ).grid(row=1, column=0, columnspan=6, pady=20)
+            import traceback
+            traceback.print_exc()
 
     def select_notification(self, notification_id, button_index):
         """Выбрать уведомление"""

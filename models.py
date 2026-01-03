@@ -23,19 +23,23 @@ class Person:
 
 
 class Event:
-    def __init__(self, id=None, person_id=None, event_type='birthday', event_date=None, reminder_days_before=7):
+    def __init__(self, id=None, person_id=None, event_type_id=None,
+                 event_date=None, reminder_days_before=7, reminder_time=None):
         self.id = id
         self.person_id = person_id
-        self.event_type = event_type
+        self.event_type_id = event_type_id
         self.event_date = event_date
         self.reminder_days_before = reminder_days_before
+        self.reminder_time = reminder_time
 
     def to_tuple(self):
-        return (self.person_id, self.event_type, self.event_date, self.reminder_days_before)
+        return (self.person_id, self.event_type_id, self.event_date,
+                self.reminder_days_before, self.reminder_time)
 
     def __str__(self):
         event_date_str = self.event_date.strftime('%d.%m.%Y') if self.event_date else 'N/A'
-        return f"[{self.id}] {self.event_type} | {event_date_str} | Person ID: {self.person_id} | Напоминание за {self.reminder_days_before} дней"
+        # ИСПРАВЛЕНО: используем event_type_id вместо event_type
+        return f"[{self.id}] Type ID: {self.event_type_id} | {event_date_str} | Person ID: {self.person_id} | Напоминание за {self.reminder_days_before} дней"
 
     def __repr__(self):
         return self.__str__()
@@ -88,3 +92,16 @@ class User:
 
     def __repr__(self):
         return self.__str__()
+
+class EventType:
+    def __init__(self, id=None, name=''):
+        self.id = id
+        self.name = name
+
+    def __str__(self):
+        return self.name
+
+    def to_tuple(self):
+        return (self.name,)
+
+

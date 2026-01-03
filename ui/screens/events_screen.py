@@ -3,6 +3,7 @@ from ui.screens.base_screen import BaseScreen
 from ui.forms.event_form import EventFormDialog
 from repositories.event_repository import EventRepository
 from repositories.person_repository import PersonRepository
+from repositories.event_type_repository import EventTypeRepository
 
 
 class EventsScreen(BaseScreen):
@@ -11,7 +12,7 @@ class EventsScreen(BaseScreen):
         self.event_repo = EventRepository()
         self.person_repo = PersonRepository()
         self.selected_event_id = None
-
+        self.event_type_repo = EventTypeRepository()
         # Заголовок
         title = ctk.CTkLabel(
             self,
@@ -59,53 +60,71 @@ class EventsScreen(BaseScreen):
         self.selected_event_id = None
 
         # Заголовки
-        headers = ["Výběr", "ID", "Osoba", "Typ", "Datum", "Připomenutí (dní)"]
+        headers = ["Výběr", "ID", "Osoba", "Typ", "Datum", "Dní před"]
         for idx, header in enumerate(headers):
             label = ctk.CTkLabel(self.table_frame, text=header, font=ctk.CTkFont(weight="bold"))
             label.grid(row=0, column=idx, padx=10, pady=5, sticky="w")
 
-        # Данные
-        filter_type = self.filter_var.get()
-        if filter_type == "all":
+        try:
+            # Получить события
             events = self.event_repo.get_all_events()
-        else:
-            days = int(filter_type)
-            events = self.event_repo.get_upcoming_events(days)
 
-        # Словарь людей для быстрого доступа
-        persons_dict = {p.id: p for p in self.person_repo.get_all_persons()}
+            # Отображение событий
+            for idx, event in enumerate(events, start=1):
+                # Получаем данные персоны
+                person = self.person_repo.get_person(event.person_id)
+                person_name = f"{person.first_name} {person.last_name}" if person else "N/A"
 
-        for idx, event in enumerate(events, start=1):
-            person = persons_dict.get(event.person_id)
-            person_name = f"{person.first_name} {person.last_name}" if person else f"ID: {event.person_id}"
+                # Получаем название типа события по ID
+                event_type_name = "other"
+                if event.event_type_id:
+                    try:
+                        et = self.event_type_repo.get_by_id(event.event_type_id)
+                        event_type_name = et.name if et else "other"
+                    except:
+                        event_type_name = "other"
 
-            event_date_str = event.event_date.strftime('%d.%m.%Y') if event.event_date else 'N/A'
+                # Иконка по типу
+                icon = {"birthday": "🎂", "anniversary": "💍", "other": "🎉"}.get(event_type_name, "🎉")
 
-            # Иконка типа
-            icon = {"birthday": "🎂", "anniversary": "💍", "other": "🎉"}.get(event.event_type, "🎉")
+                # Кнопка выбора
+                select_btn = ctk.CTkButton(
+                    self.table_frame,
+                    text="◉",
+                    width=40,
+                    command=lambda e_id=event.id, btn_idx=idx - 1: self.select_event(e_id, btn_idx)
+                )
+                select_btn.grid(row=idx, column=0, padx=5, pady=2)
+                self.event_buttons.append(select_btn)
 
-            # Кнопка выбора
-            select_btn = ctk.CTkButton(
+                # Данные события
+                values = [
+                    str(event.id),
+                    person_name,
+                    f"{icon} {event_type_name}",
+                    str(event.event_date),
+                    str(event.reminder_days_before)
+                ]
+
+                for col_idx, value in enumerate(values, start=1):
+                    label = ctk.CTkLabel(self.table_frame, text=value)
+                    label.grid(row=idx, column=col_idx, padx=10, pady=2, sticky="w")
+
+            if not events:
+                ctk.CTkLabel(
+                    self.table_frame,
+                    text="Žádné události",
+                    text_color="gray"
+                ).grid(row=1, column=0, columnspan=6, pady=20)
+
+        except Exception as e:
+            ctk.CTkLabel(
                 self.table_frame,
-                text="◉",
-                width=40,
-                command=lambda e_id=event.id, btn_idx=idx - 1: self.select_event(e_id, btn_idx)
-            )
-            select_btn.grid(row=idx, column=0, padx=5, pady=2)
-            self.event_buttons.append(select_btn)
-
-            # Остальные колонки
-            values = [
-                str(event.id),
-                person_name,
-                f"{icon} {event.event_type}",
-                event_date_str,
-                str(event.reminder_days_before)
-            ]
-
-            for col_idx, value in enumerate(values, start=1):
-                label = ctk.CTkLabel(self.table_frame, text=value)
-                label.grid(row=idx, column=col_idx, padx=10, pady=2, sticky="w")
+                text=f"Chyba načítání: {str(e)}",
+                text_color="red"
+            ).grid(row=1, column=0, columnspan=6, pady=20)
+            import traceback
+            traceback.print_exc()
 
     def select_event(self, event_id, button_index):
         """Выбрать событие"""

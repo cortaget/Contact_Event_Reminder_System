@@ -62,38 +62,59 @@ class DashboardScreen(BaseScreen):
         try:
             upcoming = self.report_repo.get_upcoming_events_report(30)
 
+            # Словарь иконок для типов событий
+            type_icons = {
+                "birthday": "🎂",
+                "anniversary": "💍",
+                "other": "🎉"
+            }
+
             for idx, event in enumerate(upcoming, start=1):
-                # ИСПРАВЛЕНИЕ: безопасный доступ к атрибутам
+                # Получение типа события
+                # Получаем тип события
                 event_type = getattr(event, 'event_type', 'other')
-                icon = "🎂" if event_type == "birthday" else "🎉"
+
+                # Словарь иконок
+                type_icons = {
+                    "birthday": "🎂",
+                    "anniversary": "💍",
+                    "other": "🎉"
+                }
+                icon = type_icons.get(event_type, "🎉")
 
                 first_name = getattr(event, 'first_name', 'N/A')
                 last_name = getattr(event, 'last_name', '')
                 event_date = getattr(event, 'event_date', 'N/A')
 
+                # Колонка: Osoba
                 ctk.CTkLabel(self.events_frame, text=f"{first_name} {last_name}").grid(
                     row=idx, column=0, padx=10, pady=2, sticky="w"
                 )
+
+                # Колонка: Typ
                 ctk.CTkLabel(self.events_frame, text=f"{icon} {event_type}").grid(
                     row=idx, column=1, padx=10, pady=2, sticky="w"
                 )
+
+                # Колонка: Datum
                 ctk.CTkLabel(self.events_frame, text=str(event_date)).grid(
                     row=idx, column=2, padx=10, pady=2, sticky="w"
                 )
 
-                # Расчёт дней до события
+                # Колонка: Za dní (расчёт)
                 try:
                     from datetime import date
                     if hasattr(event, 'event_date') and event.event_date:
                         days_left = (event.event_date - date.today()).days
-                        ctk.CTkLabel(self.events_frame, text=str(days_left)).grid(
+                        days_text = str(days_left) if days_left >= 0 else f"{days_left} (prošlé)"
+                        ctk.CTkLabel(self.events_frame, text=days_text).grid(
                             row=idx, column=3, padx=10, pady=2, sticky="w"
                         )
                     else:
                         ctk.CTkLabel(self.events_frame, text="N/A").grid(
                             row=idx, column=3, padx=10, pady=2, sticky="w"
                         )
-                except:
+                except Exception:
                     ctk.CTkLabel(self.events_frame, text="N/A").grid(
                         row=idx, column=3, padx=10, pady=2, sticky="w"
                     )
@@ -111,6 +132,9 @@ class DashboardScreen(BaseScreen):
                 text=f"Chyba načítání dat: {str(e)}",
                 text_color="red"
             ).grid(row=1, column=0, columnspan=4, pady=20)
+            # Для отладки - выведи в консоль
+            import traceback
+            traceback.print_exc()
 
     def show_all_events(self):
         print("TODO: Переход на экран всех событий")
