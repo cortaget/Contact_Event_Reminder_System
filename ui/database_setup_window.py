@@ -2,6 +2,7 @@ import customtkinter as ctk
 import pyodbc
 from config import Config
 import threading
+import queue
 
 
 class DatabaseSetupWindow(ctk.CTkToplevel):
@@ -21,6 +22,9 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
 
         self.transient(parent)
         self.grab_set()
+
+        # Очередь для безопасной передачи сообщений из потока
+        self.message_queue = queue.Queue()
 
         # Заголовок
         ctk.CTkLabel(
@@ -53,8 +57,39 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
 
         self.config = Config()
 
+        # Запуск обработки очереди сообщений
+        self.process_queue()
+
+    def process_queue(self):
+        """Обработка очереди сообщений из потока (в главном потоке)"""
+        try:
+            while True:
+                message = self.message_queue.get_nowait()
+                msg_type = message['type']
+
+                if msg_type == 'log':
+                    self._add_log(message['text'], message['level'])
+                elif msg_type == 'progress':
+                    self.progress.set(message['value'])
+                elif msg_type == 'enable_close':
+                    self.close_btn.configure(state="normal", fg_color="green")
+
+        except queue.Empty:
+            pass
+
+        # Повторить через 100 мс
+        self.after(100, self.process_queue)
+
     def log(self, message, level="INFO"):
-        """Добавить сообщение в лог"""
+        """Добавить сообщение в очередь (thread-safe)"""
+        self.message_queue.put({
+            'type': 'log',
+            'text': message,
+            'level': level
+        })
+
+    def _add_log(self, message, level="INFO"):
+        """Добавить сообщение в лог (только из главного потока!)"""
         colors = {
             "INFO": "",
             "SUCCESS": "🟢 ",
@@ -62,9 +97,25 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
             "WARNING": "🟡 "
         }
         prefix = colors.get(level, "")
-        self.log_text.insert("end", f"{prefix}{message}\n")
-        self.log_text.see("end")
-        self.update()
+
+        try:
+            self.log_text.insert("end", f"{prefix}{message}\n")
+            self.log_text.see("end")
+        except:
+            pass
+
+    def update_progress(self, value):
+        """Обновить прогресс-бар (thread-safe)"""
+        self.message_queue.put({
+            'type': 'progress',
+            'value': value
+        })
+
+    def enable_close(self):
+        """Разрешить закрытие окна (thread-safe)"""
+        self.message_queue.put({
+            'type': 'enable_close'
+        })
 
     def run_initialization(self):
         """Запустить инициализацию в отдельном потоке"""
@@ -75,25 +126,61 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
         """Выполнить инициализацию БД"""
         self.log("Zahájení inicializace databáze...", "INFO")
 
-        # SQL команды (разбиты по GO)
         sql_commands = self._get_sql_commands()
-
         total_commands = len(sql_commands)
 
         try:
-            # Подключение
+            # ===== ШАГ 1: СОЗДАНИЕ БАЗЫ ДАННЫХ =====
+            self.log(f"🔍 Kontrola existence databáze [{self.config.database}]...", "INFO")
+
+            # Подключение к master для создания БД
+            master_conn_str = f'DRIVER={{{self.config.driver}}};SERVER={self.config.server};DATABASE=master;'
+            if self.config.trusted_connection:
+                master_conn_str += 'Trusted_Connection=yes;'
+
+            self.log(f"Připojování k serveru: {self.config.server}", "INFO")
+
+            master_conn = pyodbc.connect(master_conn_str, timeout=30)
+            master_conn.autocommit = True
+            master_cursor = master_conn.cursor()
+
+            # Проверка существования БД
+            master_cursor.execute(
+                "SELECT database_id FROM sys.databases WHERE name = ?",
+                (self.config.database,)
+            )
+            db_exists = master_cursor.fetchone() is not None
+
+            if db_exists:
+                self.log(f"✅ Databáze [{self.config.database}] již existuje", "SUCCESS")
+            else:
+                self.log(f"⚠️ Databáze [{self.config.database}] neexistuje", "WARNING")
+                self.log(f"🔨 Vytváření databáze [{self.config.database}]...", "INFO")
+
+                # Создание БД
+                master_cursor.execute(f"CREATE DATABASE [{self.config.database}]")
+                self.log(f"✅ Databáze [{self.config.database}] byla vytvořena!", "SUCCESS")
+
+            master_cursor.close()
+            master_conn.close()
+
+            self.update_progress(0.2)
+
+            # ===== ШАГ 2: СОЗДАНИЕ СТРУКТУРЫ =====
+            self.log("\n" + "=" * 60, "INFO")
+            self.log("🔨 Vytváření struktury databáze...", "INFO")
+            self.log("=" * 60, "INFO")
+
+            # Подключение к созданной БД
             conn_str = f'DRIVER={{{self.config.driver}}};SERVER={self.config.server};DATABASE={self.config.database};'
             if self.config.trusted_connection:
                 conn_str += 'Trusted_Connection=yes;'
-
-            self.log(f"Připojování k serveru: {self.config.server}", "INFO")
-            self.log(f"Databáze: {self.config.database}", "INFO")
 
             conn = pyodbc.connect(conn_str, timeout=30)
             conn.autocommit = True
             cursor = conn.cursor()
 
-            self.log("Připojení úspěšné!", "SUCCESS")
+            self.log(f"✅ Připojeno k databázi [{self.config.database}]", "SUCCESS")
 
             # Выполнение команд
             executed = 0
@@ -101,8 +188,8 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
 
             for idx, cmd in enumerate(sql_commands, 1):
                 try:
-                    # Пропускаем пустые команды и комментарии
-                    if not cmd.strip() or cmd.strip().startswith('--'):
+                    # Пропускаем пустые команды
+                    if not cmd.strip():
                         continue
 
                     # Определяем тип команды
@@ -114,16 +201,16 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
                     executed += 1
 
                     # Обновление прогресс-бара
-                    progress_value = idx / total_commands
-                    self.progress.set(progress_value)
+                    progress_value = 0.2 + (0.8 * idx / total_commands)
+                    self.update_progress(progress_value)
 
                 except pyodbc.Error as e:
                     error_msg = str(e)
                     # Игнорируем ошибки "объект уже существует"
-                    if "already exists" in error_msg or "již existuje" in error_msg:
+                    if "already exists" in error_msg.lower() or "již existuje" in error_msg.lower():
                         self.log(f"  ⚠ Objekt již existuje, přeskakuji...", "WARNING")
                     else:
-                        self.log(f"  ✗ Chyba: {error_msg[:100]}", "ERROR")
+                        self.log(f"  ✗ Chyba: {error_msg[:150]}", "ERROR")
                         errors += 1
 
             cursor.close()
@@ -131,181 +218,169 @@ class DatabaseSetupWindow(ctk.CTkToplevel):
 
             # Итоги
             self.log("\n" + "=" * 60, "INFO")
-            self.log(f"Inicializace dokončena!", "SUCCESS")
-            self.log(f"Úspěšně provedeno: {executed} příkazů", "SUCCESS")
+            self.log(f"🎉 Inicializace dokončena!", "SUCCESS")
+            self.log(f"✅ Databáze: {self.config.database}", "SUCCESS")
+            self.log(f"✅ Server: {self.config.server}", "SUCCESS")
+            self.log(f"✅ Úspěšně provedeno: {executed} příkazů", "SUCCESS")
 
             if errors > 0:
-                self.log(f"Chyby: {errors}", "WARNING")
+                self.log(f"⚠️  Chyby: {errors}", "WARNING")
             else:
-                self.log("Bez chyb! ✓", "SUCCESS")
+                self.log("✅ Bez chyb!", "SUCCESS")
+
+            self.log("=" * 60, "INFO")
 
             self.success = True
 
         except Exception as e:
             self.log("\n" + "=" * 60, "ERROR")
-            self.log(f"Kritická chyba: {str(e)}", "ERROR")
+            self.log(f"❌ Kritická chyba: {str(e)}", "ERROR")
             self.success = False
+
+            # Дополнительная информация об ошибке
+            import traceback
+            error_details = traceback.format_exc()
+            for line in error_details.split('\n')[:10]:  # Первые 10 строк
+                if line.strip():
+                    self.log(f"  {line}", "ERROR")
 
         finally:
             # Активация кнопки закрытия
-            self.close_btn.configure(state="normal", fg_color="green")
-            self.progress.set(1.0)
+            self.enable_close()
+            self.update_progress(1.0)
 
     def _get_sql_commands(self):
-        """Получить список SQL команд, разбитых по GO"""
-        sql_script = """
-SET ANSI_NULLS ON
-SET QUOTED_IDENTIFIER ON
+        """Получить список SQL команд"""
+        commands = []
 
--- Таблица типов событий
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[event_type]') AND type in (N'U'))
-BEGIN
+        # 1. Таблица event_type
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[event_type]') AND type = N'U')
 CREATE TABLE [dbo].[event_type](
-    [id] [int] IDENTITY(1,1) NOT NULL,
-    [name] [nvarchar](50) NOT NULL,
-PRIMARY KEY CLUSTERED ([id] ASC),
-UNIQUE NONCLUSTERED ([name] ASC)
+    [id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [name] [nvarchar](50) NOT NULL UNIQUE
 )
-END
+        """)
 
--- Таблица персон
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[person]') AND type in (N'U'))
-BEGIN
+        # 2. Таблица person
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[person]') AND type = N'U')
 CREATE TABLE [dbo].[person](
-    [id] [int] IDENTITY(1,1) NOT NULL,
+    [id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [first_name] [nvarchar](100) NOT NULL,
     [last_name] [nvarchar](100) NOT NULL,
     [birth_date] [date] NULL,
-    [gender] [nvarchar](10) NULL,
+    [gender] [nvarchar](10) NULL CHECK ([gender] IN ('male', 'female', 'other')),
     [is_active] [bit] NOT NULL DEFAULT 1,
-    [created_at] [datetime2](7) NULL DEFAULT (getdate()),
-PRIMARY KEY CLUSTERED ([id] ASC)
+    [created_at] [datetime2](7) NULL DEFAULT GETDATE()
 )
-END
+        """)
 
--- Таблица групп
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[group]') AND type in (N'U'))
-BEGIN
+        # 3. Таблица group
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[group]') AND type = N'U')
 CREATE TABLE [dbo].[group](
-    [id] [int] IDENTITY(1,1) NOT NULL,
+    [id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [name] [nvarchar](100) NOT NULL,
-    [created_at] [datetime2](7) NULL DEFAULT (getdate()),
-PRIMARY KEY CLUSTERED ([id] ASC)
+    [created_at] [datetime2](7) NULL DEFAULT GETDATE()
 )
-END
+        """)
 
--- Таблица связи person-group
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[person_group]') AND type in (N'U'))
-BEGIN
+        # 4. Таблица person_group
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[person_group]') AND type = N'U')
 CREATE TABLE [dbo].[person_group](
     [person_id] [int] NOT NULL,
     [group_id] [int] NOT NULL,
-    [added_at] [datetime2](7) NULL DEFAULT (getdate()),
-PRIMARY KEY CLUSTERED ([person_id] ASC, [group_id] ASC)
+    [added_at] [datetime2](7) NULL DEFAULT GETDATE(),
+    PRIMARY KEY ([person_id], [group_id])
 )
-END
+        """)
 
--- Таблица событий
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[event]') AND type in (N'U'))
-BEGIN
+        # 5. Таблица event
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[event]') AND type = N'U')
 CREATE TABLE [dbo].[event](
-    [id] [int] IDENTITY(1,1) NOT NULL,
+    [id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [person_id] [int] NOT NULL,
     [event_date] [date] NOT NULL,
-    [reminder_days_before] [int] NOT NULL DEFAULT 7,
-    [created_at] [datetime2](7) NULL DEFAULT (getdate()),
+    [reminder_days_before] [int] NOT NULL DEFAULT 7 CHECK ([reminder_days_before] >= 0),
+    [created_at] [datetime2](7) NULL DEFAULT GETDATE(),
     [event_type_id] [int] NOT NULL,
-    [reminder_time] [time](7) NULL,
-PRIMARY KEY CLUSTERED ([id] ASC)
+    [reminder_time] [time](7) NULL
 )
-END
+        """)
 
--- Таблица уведомлений
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[notification]') AND type in (N'U'))
-BEGIN
+        # 6. Таблица notification
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[notification]') AND type = N'U')
 CREATE TABLE [dbo].[notification](
-    [id] [int] IDENTITY(1,1) NOT NULL,
+    [id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [event_id] [int] NOT NULL,
-    [sent_at] [datetime2](7) NOT NULL DEFAULT (getdate()),
-    [status] [nvarchar](20) NOT NULL,
-PRIMARY KEY CLUSTERED ([id] ASC)
+    [sent_at] [datetime2](7) NOT NULL DEFAULT GETDATE(),
+    [status] [nvarchar](20) NOT NULL CHECK ([status] IN ('planned', 'sent', 'failed'))
 )
-END
+        """)
 
--- Таблица пользователей
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[user]') AND type in (N'U'))
-BEGIN
+        # 7. Таблица user
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[user]') AND type = N'U')
 CREATE TABLE [dbo].[user](
-    [id] [int] IDENTITY(1,1) NOT NULL,
+    [id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [name] [nvarchar](100) NOT NULL,
-    [email] [nvarchar](255) NOT NULL,
+    [email] [nvarchar](255) NOT NULL UNIQUE,
     [notifications_enabled] [bit] NOT NULL DEFAULT 1,
-    [created_at] [datetime2](7) NULL DEFAULT (getdate()),
-PRIMARY KEY CLUSTERED ([id] ASC),
-UNIQUE NONCLUSTERED ([email] ASC)
+    [created_at] [datetime2](7) NULL DEFAULT GETDATE()
 )
-END
+        """)
 
--- Внешний ключ: event -> event_type
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_event_event_type]'))
-BEGIN
-ALTER TABLE [dbo].[event] WITH CHECK ADD CONSTRAINT [FK_event_event_type] FOREIGN KEY([event_type_id])
-REFERENCES [dbo].[event_type] ([id])
-END
+        # 8. FK: event -> event_type
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_event_event_type')
+ALTER TABLE [dbo].[event] 
+ADD CONSTRAINT [FK_event_event_type] FOREIGN KEY([event_type_id])
+REFERENCES [dbo].[event_type]([id])
+        """)
 
--- Внешний ключ: event -> person
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_event_person]'))
-BEGIN
-ALTER TABLE [dbo].[event] WITH CHECK ADD CONSTRAINT [FK_event_person] FOREIGN KEY([person_id])
-REFERENCES [dbo].[person] ([id]) ON DELETE CASCADE
-END
+        # 9. FK: event -> person
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_event_person')
+ALTER TABLE [dbo].[event] 
+ADD CONSTRAINT [FK_event_person] FOREIGN KEY([person_id])
+REFERENCES [dbo].[person]([id]) ON DELETE CASCADE
+        """)
 
--- Внешний ключ: notification -> event
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_notification_event]'))
-BEGIN
-ALTER TABLE [dbo].[notification] WITH CHECK ADD CONSTRAINT [FK_notification_event] FOREIGN KEY([event_id])
-REFERENCES [dbo].[event] ([id]) ON DELETE CASCADE
-END
+        # 10. FK: notification -> event
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_notification_event')
+ALTER TABLE [dbo].[notification] 
+ADD CONSTRAINT [FK_notification_event] FOREIGN KEY([event_id])
+REFERENCES [dbo].[event]([id]) ON DELETE CASCADE
+        """)
 
--- Внешний ключ: person_group -> group
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_person_group_group]'))
-BEGIN
-ALTER TABLE [dbo].[person_group] WITH CHECK ADD CONSTRAINT [FK_person_group_group] FOREIGN KEY([group_id])
-REFERENCES [dbo].[group] ([id]) ON DELETE CASCADE
-END
+        # 11. FK: person_group -> group
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_person_group_group')
+ALTER TABLE [dbo].[person_group] 
+ADD CONSTRAINT [FK_person_group_group] FOREIGN KEY([group_id])
+REFERENCES [dbo].[group]([id]) ON DELETE CASCADE
+        """)
 
--- Внешний ключ: person_group -> person
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_person_group_person]'))
-BEGIN
-ALTER TABLE [dbo].[person_group] WITH CHECK ADD CONSTRAINT [FK_person_group_person] FOREIGN KEY([person_id])
-REFERENCES [dbo].[person] ([id]) ON DELETE CASCADE
-END
+        # 12. FK: person_group -> person
+        commands.append("""
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_person_group_person')
+ALTER TABLE [dbo].[person_group] 
+ADD CONSTRAINT [FK_person_group_person] FOREIGN KEY([person_id])
+REFERENCES [dbo].[person]([id]) ON DELETE CASCADE
+        """)
 
--- Проверка: reminder_days_before >= 0
-IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_event_reminder_days')
-BEGIN
-ALTER TABLE [dbo].[event] WITH CHECK ADD CONSTRAINT [CK_event_reminder_days] CHECK (([reminder_days_before]>=(0)))
-END
+        # 13. DROP view v_upcoming_events
+        commands.append(
+            "IF EXISTS (SELECT * FROM sys.views WHERE name = 'v_upcoming_events') DROP VIEW [dbo].[v_upcoming_events]")
 
--- Проверка: status в notification
-IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_notification_status')
-BEGIN
-ALTER TABLE [dbo].[notification] WITH CHECK ADD CONSTRAINT [CK_notification_status] 
-CHECK (([status]='failed' OR [status]='sent' OR [status]='planned'))
-END
-
--- Проверка: gender в person
-IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_person_gender')
-BEGIN
-ALTER TABLE [dbo].[person] WITH CHECK ADD CONSTRAINT [CK_person_gender]
-CHECK (([gender]='other' OR [gender]='female' OR [gender]='male'))
-END
-
--- View: upcoming events
-IF EXISTS (SELECT * FROM sys.views WHERE name = 'v_upcoming_events')
-DROP VIEW [dbo].[v_upcoming_events]
-
-EXEC('CREATE VIEW [dbo].[v_upcoming_events] AS
+        # 14. CREATE view v_upcoming_events
+        commands.append("""
+CREATE VIEW [dbo].[v_upcoming_events] AS
 SELECT
     e.id AS event_id,
     e.event_date,
@@ -322,37 +397,43 @@ INNER JOIN person p ON e.person_id = p.id
 INNER JOIN event_type et ON e.event_type_id = et.id
 LEFT JOIN person_group pg ON p.id = pg.person_id
 LEFT JOIN [group] g ON pg.group_id = g.id
-WHERE e.event_date >= CAST(GETDATE() AS DATE)')
+WHERE e.event_date >= CAST(GETDATE() AS DATE)
+        """)
 
--- View: event summary
-IF EXISTS (SELECT * FROM sys.views WHERE name = 'v_event_summary')
-DROP VIEW [dbo].[v_event_summary]
+        # 15. DROP view v_event_summary
+        commands.append(
+            "IF EXISTS (SELECT * FROM sys.views WHERE name = 'v_event_summary') DROP VIEW [dbo].[v_event_summary]")
 
-EXEC('CREATE VIEW [dbo].[v_event_summary] AS
+        # 16. CREATE view v_event_summary
+        commands.append("""
+CREATE VIEW [dbo].[v_event_summary] AS
 SELECT
     e.id AS event_id,
     e.event_date,
     e.reminder_days_before,
     e.reminder_time,
     et.name AS event_type,
-    p.first_name + '' '' + p.last_name AS person_name,
+    p.first_name + ' ' + p.last_name AS person_name,
     DATEDIFF(day, GETDATE(), e.event_date) AS days_until,
     CASE
-        WHEN DATEDIFF(day, GETDATE(), e.event_date) < 0 THEN ''prošlé''
-        WHEN DATEDIFF(day, GETDATE(), e.event_date) = 0 THEN ''dnes''
-        WHEN DATEDIFF(day, GETDATE(), e.event_date) <= 7 THEN ''tento týden''
-        WHEN DATEDIFF(day, GETDATE(), e.event_date) <= 30 THEN ''tento měsíc''
-        ELSE ''budoucí''
+        WHEN DATEDIFF(day, GETDATE(), e.event_date) < 0 THEN 'prošlé'
+        WHEN DATEDIFF(day, GETDATE(), e.event_date) = 0 THEN 'dnes'
+        WHEN DATEDIFF(day, GETDATE(), e.event_date) <= 7 THEN 'tento týden'
+        WHEN DATEDIFF(day, GETDATE(), e.event_date) <= 30 THEN 'tento měsíc'
+        ELSE 'budoucí'
     END AS time_category
 FROM event e
 INNER JOIN person p ON e.person_id = p.id
-INNER JOIN event_type et ON e.event_type_id = et.id')
+INNER JOIN event_type et ON e.event_type_id = et.id
+        """)
 
--- View: group statistics
-IF EXISTS (SELECT * FROM sys.views WHERE name = 'v_group_statistics')
-DROP VIEW [dbo].[v_group_statistics]
+        # 17. DROP view v_group_statistics
+        commands.append(
+            "IF EXISTS (SELECT * FROM sys.views WHERE name = 'v_group_statistics') DROP VIEW [dbo].[v_group_statistics]")
 
-EXEC('CREATE VIEW [dbo].[v_group_statistics] AS
+        # 18. CREATE view v_group_statistics
+        commands.append("""
+CREATE VIEW [dbo].[v_group_statistics] AS
 SELECT
     g.id AS group_id,
     g.name AS group_name,
@@ -361,33 +442,8 @@ SELECT
 FROM [group] g
 LEFT JOIN person_group pg ON g.id = pg.group_id
 LEFT JOIN event e ON pg.person_id = e.person_id
-GROUP BY g.id, g.name')
-"""
-
-        # Разбиваем по блокам BEGIN...END и отдельным командам
-        commands = []
-        current_block = []
-        in_block = False
-
-        for line in sql_script.split('\n'):
-            line = line.strip()
-
-            if not line or line.startswith('--'):
-                continue
-
-            if 'BEGIN' in line:
-                in_block = True
-                current_block.append(line)
-            elif 'END' in line:
-                current_block.append(line)
-                commands.append('\n'.join(current_block))
-                current_block = []
-                in_block = False
-            elif in_block:
-                current_block.append(line)
-            else:
-                if line:
-                    commands.append(line)
+GROUP BY g.id, g.name
+        """)
 
         return commands
 
