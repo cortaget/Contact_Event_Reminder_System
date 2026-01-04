@@ -14,8 +14,6 @@ class GroupRepository:
         """
         return self.db.execute_insert_with_identity(query, group.to_tuple())
 
-
-
     def update_group(self, group):
         query = "UPDATE [group] SET name=? WHERE id=?"
         params = group.to_tuple() + (group.id,)
@@ -36,3 +34,15 @@ class GroupRepository:
         query = "SELECT * FROM [group] ORDER BY name"
         rows = self.db.execute_query(query, fetch=True)
         return [Group(r.id, r.name) for r in rows]
+
+    # === НОВЫЕ МЕТОДЫ С VIEW ===
+
+    def get_group_statistics(self):
+        """Получить статистику по группам (используя VIEW)"""
+        query = "SELECT * FROM v_group_statistics ORDER BY group_name"
+        return self.db.execute_query(query, fetch=True)
+
+    def get_group_stats_by_id(self, group_id):
+        """Получить статистику конкретной группы"""
+        query = "SELECT * FROM v_group_statistics WHERE group_id = ?"
+        return self.db.execute_query(query, (group_id,), fetchone=True)

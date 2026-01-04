@@ -6,21 +6,22 @@ class ReportRepository:
         self.db = Database()
 
     def get_upcoming_events_report(self, days_ahead=30):
+        """Получить ближайшие события (используя VIEW)"""
         query = """
-        SELECT 
-            e.id, e.event_date, e.reminder_days_before, e.reminder_time,
-            et.name as event_type,
-            p.first_name, p.last_name,
-            g.name as group_name
-        FROM event e
-        INNER JOIN person p ON e.person_id = p.id
-        INNER JOIN event_type et ON e.event_type_id = et.id
-        LEFT JOIN person_group pg ON p.id = pg.person_id
-        LEFT JOIN [group] g ON pg.group_id = g.id
-        WHERE e.event_date BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(day, ?, CAST(GETDATE() AS DATE))
-        ORDER BY e.event_date
+        SELECT * FROM v_upcoming_events 
+        WHERE days_until_event <= ? 
+        ORDER BY event_date
         """
         return self.db.execute_query(query, (days_ahead,), fetch=True)
+
+    def get_events_by_category(self, category='все'):
+        """Получить события по категории времени (используя VIEW)"""
+        if category == 'все':
+            query = "SELECT * FROM v_event_summary ORDER BY event_date"
+            return self.db.execute_query(query, fetch=True)
+        else:
+            query = "SELECT * FROM v_event_summary WHERE time_category = ? ORDER BY event_date"
+            return self.db.execute_query(query, (category,), fetch=True)
 
     def get_events_statistics_by_group(self):
         query = """

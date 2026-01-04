@@ -84,6 +84,15 @@ class SettingsScreen(BaseScreen):
             fg_color="green"
         ).pack(side="left", padx=5)
 
+        ctk.CTkButton(
+            btn_frame_db,
+            text="🔄 Inicializovat databázi",
+            command=self.initialize_database,
+            width=180,
+            fg_color="#2B5278",
+            hover_color="#1E3A5F"
+        ).pack(side="left", padx=5)
+
         # === БЛОК 2: Nastavení upozornění ===
         notif_frame = ctk.CTkFrame(main_frame)
         notif_frame.pack(fill="x", padx=10, pady=10)
@@ -220,3 +229,107 @@ class SettingsScreen(BaseScreen):
             command=dialog.destroy,
             width=100
         ).pack(pady=10)
+
+    def initialize_database(self):
+        """Inicializovat databázi"""
+        # Import zde pro vyhnuti se circular import
+        from ui.database_setup_window import DatabaseSetupWindow
+
+        # Dialog potvrzení
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Potvrzení")
+        dialog.geometry("500x280")
+        dialog.resizable(False, False)
+
+        # Centrovani
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (500 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (280 // 2)
+        dialog.geometry(f"500x280+{x}+{y}")
+
+        dialog.transient(self.winfo_toplevel())
+        dialog.grab_set()
+
+        # Nadpis
+        ctk.CTkLabel(
+            dialog,
+            text="🔄 Inicializace databáze",
+            font=ctk.CTkFont(size=20, weight="bold")
+        ).pack(padx=30, pady=(30, 15))
+
+        # Text
+        ctk.CTkLabel(
+            dialog,
+            text="Chcete spustit inicializaci databáze?\n\n"
+                 "Vytvoří se nová databáze nebo se aktualizuje\n"
+                 "struktura stávající databáze.\n\n"
+                 "Existující data NEBUDOU smazána.",
+            justify="center",
+            font=ctk.CTkFont(size=13)
+        ).pack(padx=30, pady=(0, 20))
+
+        # Tlacitka
+        def on_confirm():
+            dialog.destroy()
+            # Ulozit nastaveni pred inicializaci
+            self.save_db_settings_silent()
+
+            # Spustit okno inicializace
+            setup_window = DatabaseSetupWindow(parent=self.winfo_toplevel())
+            setup_window.run_initialization()
+
+            # Po zavření zkontrolovat úspěch
+            self.after(100, lambda: self.check_init_result(setup_window))
+
+        def on_cancel():
+            dialog.destroy()
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=(0, 30))
+
+        ctk.CTkButton(
+            btn_frame,
+            text="❌ Zrušit",
+            command=on_cancel,
+            width=120,
+            height=40,
+            font=ctk.CTkFont(size=13),
+            fg_color="gray50",
+            hover_color="gray40"
+        ).pack(side="left", padx=10)
+
+        ctk.CTkButton(
+            btn_frame,
+            text="✅ Spustit",
+            command=on_confirm,
+            width=120,
+            height=40,
+            font=ctk.CTkFont(size=13),
+            fg_color="green",
+            hover_color="darkgreen"
+        ).pack(side="left", padx=10)
+
+    def save_db_settings_silent(self):
+        """Сохранить настройки БД без сообщения"""
+        self.config.server = self.server_entry.get().strip()
+        self.config.database = self.database_entry.get().strip()
+        self.config.driver = self.driver_entry.get().strip()
+        self.config.trusted_connection = self.trusted_var.get()
+        try:
+            self.config.save()
+        except:
+            pass
+
+    def check_init_result(self, setup_window):
+        """Zkontrolovat výsledek inicializace"""
+        if setup_window.winfo_exists():
+            # Okno stále existuje, zkontrolovat později
+            self.after(100, lambda: self.check_init_result(setup_window))
+        else:
+            # Okno zavřeno, zkontrolovat úspěch
+            if hasattr(setup_window, 'success') and setup_window.success:
+                self.show_message(
+                    "Úspěch",
+                    "✅ Databáze byla úspěšně inicializována!",
+                    success=True
+                )

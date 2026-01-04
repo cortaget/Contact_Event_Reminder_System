@@ -41,6 +41,15 @@ class GroupsScreen(BaseScreen):
         ctk.CTkButton(btn_frame, text="🗑 Smazat", command=self.delete_group, height=35, width=80, fg_color="red").pack(
             side="left", padx=5)
 
+        # НОВОЕ: Кнопка статистики
+        ctk.CTkButton(
+            btn_frame,
+            text="📊 Statistiky",
+            command=self.show_statistics,
+            height=35,
+            width=100
+        ).pack(side="left", padx=5)
+
         # Таблица групп
         self.groups_table = ctk.CTkScrollableFrame(left_frame)
         self.groups_table.grid(row=2, column=0, pady=10, sticky="nsew")
@@ -106,7 +115,6 @@ class GroupsScreen(BaseScreen):
 
             # Остальные колонки
             values = [str(group.id), group.name, str(member_count)]
-
             for col_idx, value in enumerate(values, start=1):
                 label = ctk.CTkLabel(self.groups_table, text=value)
                 label.grid(row=idx, column=col_idx, padx=10, pady=2, sticky="w")
@@ -218,7 +226,6 @@ class GroupsScreen(BaseScreen):
         all_persons = self.person_repo.get_all_persons()
         current_members = self.pg_repo.get_persons_in_group(self.selected_group_id)
         current_member_ids = {m.id for m in current_members}
-
         available_persons = [p for p in all_persons if p.id not in current_member_ids]
 
         if not available_persons:
@@ -227,7 +234,6 @@ class GroupsScreen(BaseScreen):
                 text="Všechny osoby jsou již v této skupině",
                 text_color="gray"
             ).pack(padx=20, pady=20)
-
             ctk.CTkButton(dialog, text="Zavřít", command=dialog.destroy).pack(pady=10)
             return
 
@@ -345,3 +351,117 @@ class GroupsScreen(BaseScreen):
         ).pack(padx=20, pady=30)
 
         ctk.CTkButton(warning, text="OK", command=warning.destroy, width=100).pack(pady=10)
+
+    def show_statistics(self):
+        """Показать статистику по группам (используя VIEW)"""
+        stats_window = ctk.CTkToplevel(self)
+        stats_window.title("📊 Statistiky skupin")
+        stats_window.geometry("1050x850")
+        stats_window.resizable(False, False)
+        stats_window.transient(self)
+        stats_window.grab_set()
+
+        # Заголовок
+        ctk.CTkLabel(
+            stats_window,
+            text="📊 Statistiky skupin",
+            font=ctk.CTkFont(size=20, weight="bold")
+        ).pack(padx=20, pady=(20, 10))
+
+        # Описание
+        ctk.CTkLabel(
+            stats_window,
+            text="Přehled všech skupin s počtem osob a událostí",
+            font=ctk.CTkFont(size=12),
+            text_color="gray"
+        ).pack(padx=20, pady=(0, 10))
+
+        # Таблица
+        table_frame = ctk.CTkScrollableFrame(stats_window, height=280)
+        table_frame.pack(padx=20, pady=10, fill="both", expand=True)
+
+        # Заголовки
+        headers = ["Název skupiny", "Počet osob", "Počet událostí"]
+        for idx, header in enumerate(headers):
+            ctk.CTkLabel(
+                table_frame,
+                text=header,
+                font=ctk.CTkFont(weight="bold", size=13)
+            ).grid(row=0, column=idx, padx=15, pady=8, sticky="w")
+
+        # Данные из VIEW
+        try:
+            stats = self.group_repo.get_group_statistics()
+
+            if not stats:
+                ctk.CTkLabel(
+                    table_frame,
+                    text="Žádné statistiky k zobrazení",
+                    text_color="gray"
+                ).grid(row=1, column=0, columnspan=3, pady=30)
+            else:
+                total_persons = 0
+                total_events = 0
+
+                for idx, row in enumerate(stats, start=1):
+                    # Цвет строки (чередование)
+                    bg_color = "gray20" if idx % 2 == 0 else "transparent"
+
+                    values = [
+                        row.group_name,
+                        str(row.total_persons),
+                        str(row.total_events)
+                    ]
+
+                    total_persons += row.total_persons
+                    total_events += row.total_events
+
+                    for col_idx, value in enumerate(values):
+                        label = ctk.CTkLabel(
+                            table_frame,
+                            text=value,
+                            fg_color=bg_color
+                        )
+                        label.grid(row=idx, column=col_idx, padx=15, pady=5, sticky="w")
+
+                # Итоговая строка
+                separator = ctk.CTkFrame(table_frame, height=2, fg_color="gray")
+                separator.grid(row=len(stats) + 1, column=0, columnspan=3, sticky="ew", padx=15, pady=5)
+
+                ctk.CTkLabel(
+                    table_frame,
+                    text="CELKEM:",
+                    font=ctk.CTkFont(weight="bold", size=13)  # ← ИСПРАВЛЕНО
+                ).grid(row=len(stats) + 2, column=0, padx=15, pady=5, sticky="w")
+
+                ctk.CTkLabel(
+                    table_frame,
+                    text=str(total_persons),
+                    font=ctk.CTkFont(weight="bold", size=13),
+                    text_color="green"
+                ).grid(row=len(stats) + 2, column=1, padx=15, pady=5, sticky="w")
+
+                ctk.CTkLabel(
+                    table_frame,
+                    text=str(total_events),
+                    font=ctk.CTkFont(weight="bold", size=13),
+                    text_color="green"
+                ).grid(row=len(stats) + 2, column=2, padx=15, pady=5, sticky="w")
+
+        except Exception as e:
+            ctk.CTkLabel(
+                table_frame,
+                text=f"❌ Chyba načítání statistik:\n{str(e)}",
+                text_color="red"
+            ).grid(row=1, column=0, columnspan=3, pady=30)
+            import traceback
+            traceback.print_exc()
+
+        # Кнопка закрытия
+        ctk.CTkButton(
+            stats_window,
+            text="Zavřít",
+            command=stats_window.destroy,
+            width=120,
+            height=35
+        ).pack(pady=(10, 20))
