@@ -1,0 +1,266 @@
+================================================================================
+EVENT REMINDER SYSTEM - Personal Contacts & Events Manager
+================================================================================
+
+Autor:          Maxim Mazuret
+Email:          mazuret@spsejecna.cz
+Škola:          Střední průmyslová škola elektrotechnická, Praha 2, Ječná 30
+Datum:          11.01.2026
+Verze:          1.0
+
+Poznámka:       Jedná se o školní projekt vytvořený v rámci předmětu
+                Programové vybavení
+
+================================================================================
+POPIS PROJEKTU
+================================================================================
+
+Event Reminder System je desktopová aplikace pro správu osobních kontaktů
+a událostí s automatickým systémem připomínek. Aplikace umožňuje:
+
+- Správu kontaktů (jméno, příjmení, datum narození)
+- Správu událostí (narozeniny, výročí, vlastní události)
+- Automatické připomínky před nadcházejícími událostmi
+- Organizaci kontaktů do skupin
+- Import kontaktů z CSV souborů
+- Generování reportů a statistik
+
+Aplikace je postavena na:
+- Python 3.10+
+- CustomTkinter (moderní GUI framework)
+- Microsoft SQL Server (databáze)
+- ODBC Driver 17 for SQL Server
+
+================================================================================
+POŽADAVKY NA SYSTÉM
+================================================================================
+
+SOFTWARE:
+- Windows 10/11 (64-bit)
+- Python 3.10 nebo novější (pouze pro vývoj)
+- Microsoft SQL Server 2016+ nebo SQL Server Express (zdarma)
+- ODBC Driver 17 for SQL Server
+
+HARDWARE:
+- RAM: 2 GB (doporučeno 4 GB)
+- Disk: 200 MB volného místa
+- Procesor: Jakýkoliv moderní CPU
+
+================================================================================
+INSTALACE KROK ZA KROKEM
+================================================================================
+
+KROK 1: INSTALACE SQL SERVER
+-----------------------------
+1. Stáhněte SQL Server Express z:
+   https://www.microsoft.com/en-us/sql-server/sql-server-downloads
+
+2. Spusťte instalaci a vyberte "Basic" nebo "Custom"
+
+3. Zapamatujte si název instance (např. localhost\SQLEXPRESS)
+
+
+KROK 2: INSTALACE ODBC DRIVER
+------------------------------
+1. Stáhněte ODBC Driver 17 for SQL Server z:
+   https://go.microsoft.com/fwlink/?linkid=2249004
+
+2. Spusťte instalaci a dokončete proces
+
+
+KROK 3: SPUŠTĚNÍ APLIKACE (EXE)
+--------------------------------
+Pokud máte pouze EXE soubor:
+
+1. Zkopírujte Event_Reminder_System.exe do libovolné složky
+
+2. Dvojklikem spusťte aplikaci
+
+3. Při prvním spuštění se zobrazí okno konfigurace databáze:
+   - Server: zadejte název SQL Serveru (např. localhost\SQLEXPRESS nebo .)
+   - Database: Contact_Event_Reminder_System (ponechte výchozí)
+   - Driver: ODBC Driver 17 for SQL Server
+   - Zaškrtněte "Windows Authentication"
+
+4. Klikněte na "Otestovat připojení" pro ověření
+
+5. Klikněte na "Uložit a pokračovat"
+
+6. Databáze se vytvoří automaticky a aplikace se spustí
+
+
+KROK 4: SPUŠTĚNÍ Z KÓDU (PRO VÝVOJÁŘE)
+---------------------------------------
+Pokud máte zdrojové kódy:
+
+1. Nainstalujte Python 3.10+:
+   https://www.python.org/downloads/
+
+2. Otevřete terminál v kořenové složce projektu
+
+3. Nainstalujte závislosti:
+   pip install -r requirements.txt
+
+4. Spusťte aplikaci:
+   python main.py
+
+5. Postupujte stejně jako v KROK 3
+
+
+KROK 5: IMPORT DATABÁZE (RUČNÍ METODA)
+---------------------------------------
+Pokud chcete importovat databázi ručně:
+
+1. Otevřete SQL Server Management Studio (SSMS)
+
+2. Připojte se k vašemu SQL Server
+
+3. Otevřete soubor database_export.sql
+
+4. Spusťte celý skript (F5)
+
+5. Databáze Contact_Event_Reminder_System bude vytvořena
+
+================================================================================
+KONFIGURACE
+================================================================================
+
+Aplikace se konfiguruje pomocí souboru config.json, který se vytvoří
+automaticky při prvním spuštění v téže složce jako EXE soubor.
+
+Struktura config.json:
+{
+    "database": {
+        "server": "localhost\SQLEXPRESS",
+        "database": "Contact_Event_Reminder_System",
+        "driver": "ODBC Driver 17 for SQL Server",
+        "trusted_connection": true
+    },
+    "settings": {
+        "default_reminder_days": 7
+    }
+}
+
+MOŽNOSTI KONFIGURACE:
+- server: Název SQL Server instance
+- database: Název databáze
+- driver: Název ODBC driveru
+- trusted_connection: true = Windows Authentication, false = SQL Authentication
+- default_reminder_days: Výchozí počet dní pro připomínky (standardně 7)
+
+Po změně config.json restartujte aplikaci.
+
+================================================================================
+JAK POUŽÍVAT APLIKACI
+================================================================================
+
+1. PŘIDÁNÍ KONTAKTU:
+   - Klikněte na "Osoby" v levém menu
+   - Klikněte na "+ Přidat"
+   - Vyplňte jméno, příjmení, datum narození
+   - Klikněte "Uložit"
+
+2. PŘIDÁNÍ UDÁLOSTI:
+   - Klikněte na "Události" v levém menu
+   - Klikněte na "+ Přidat"
+   - Vyberte osobu, typ události, datum
+   - Nastavte "Připomenout dní předem" (např. 7)
+   - Klikněte "Uložit"
+
+3. PŘIPOMÍNKY:
+   - Aplikace kontroluje události každou hodinu
+   - Pokud je událost blízko, zobrazí se okno s připomínkou
+   - Můžete potvrdit nebo odložit připomínku
+
+4. SKUPINY:
+   - Klikněte na "Skupiny" v levém menu
+   - Vytvořte skupinu (rodina, práce, přátelé)
+   - Přidejte členy do skupiny
+
+5. IMPORT KONTAKTŮ:
+   - Připravte CSV soubor se sloupci: first_name, last_name, birth_date
+   - Klikněte na "Import" v menu
+   - Vyberte soubor a namapujte sloupce
+   - Klikněte "Import"
+
+================================================================================
+ŘEŠENÍ PROBLÉMŮ
+================================================================================
+
+PROBLÉM: Aplikace se nespustí
+ŘEŠENÍ:
+- Zkontrolujte že je nainstalován ODBC Driver 17
+- Ověřte že SQL Server běží (services.msc → SQL Server)
+- Zkontrolujte config.json že obsahuje správné údaje
+
+PROBLÉM: "Connection failed"
+ŘEŠENÍ:
+- Ověřte název serveru (sqlcmd -L pro výpis serverů)
+- Zkontrolujte že Windows Authentication je povolena
+- Restartujte SQL Server službu
+
+PROBLÉM: "Database not found"
+ŘEŠENÍ:
+- Přejděte do Nastavení
+- Klikněte na "Inicializovat databázi"
+- Nebo importujte database_export.sql ručně v SSMS
+
+PROBLÉM: Připomínky se nezobrazují
+ŘEŠENÍ:
+- Zkontrolujte že událost má datum v budoucnosti
+- Ověřte že "Připomenout dní předem" je větší než dní do události
+- Zkontrolujte že aplikace běží (připomínky kontrolují každou hodinu)
+
+================================================================================
+STRUKTURA PROJEKTU
+================================================================================
+
+Event_Reminder_System/
+├── main.py                          # Hlavní spouštěcí soubor
+├── config.py                        # Správa konfigurace
+├── requirements.txt                 # Python závislosti
+├── README.txt                       # Tento soubor
+├── database_export.sql              # Export databázové struktury
+├── documentation.pdf                # Kompletní dokumentace
+│
+├── ui/                              # GUI komponenty
+│   ├── main_window.py              # Hlavní okno aplikace
+│   ├── dashboard_screen.py         # Dashboard
+│   ├── persons_screen.py           # Správa kontaktů
+│   ├── events_screen.py            # Správa událostí
+│   ├── groups_screen.py            # Správa skupin
+│   ├── settings_screen.py          # Nastavení
+│   ├── database_config_window.py   # Konfigurace DB
+│   └── reminder_notification_window.py  # Okno připomínek
+│
+├── repositories/                    # Datové vrstvy
+│   ├── person_repository.py        # CRUD operace pro kontakty
+│   ├── event_repository.py         # CRUD operace pro události
+│   ├── group_repository.py         # CRUD operace pro skupiny
+│   ├── event_type_repository.py    # Typy událostí
+│   └── database_deployer.py        # Automatické nasazení DB
+│
+├── services/                        # Business logika
+│   └── notification_service.py     # Systém připomínek
+│
+└── dist/                           # Build složka (EXE soubor)
+    └── Event_Reminder_System.exe
+
+================================================================================
+PODPORA A KONTAKT
+================================================================================
+
+Autor:      Maxim Mazuret
+Email:      mazuret@spsejecna.cz
+GitHub:     https://github.com/cortaget/
+Verze:      1.0
+Datum:      11.01.2026
+
+================================================================================
+LICENCE
+================================================================================
+
+Tento projekt je školní práce vytvořená pro vzdělávací účely.
+Všechna práva vyhrazena © 2026
+
+================================================================================

@@ -13,14 +13,14 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
         self.success = False  # Флаг успешной настройки
 
         self.title("⚙️ Konfigurace databáze")
-        self.geometry("600x550")
+        self.geometry("1000x850")
         self.resizable(False, False)
 
         # Центрирование окна
         self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (600 // 2)
-        y = (self.winfo_screenheight() // 2) - (550 // 2)
-        self.geometry(f"600x550+{x}+{y}")
+        x = (self.winfo_screenwidth() // 2) - (1000 // 2)
+        y = (self.winfo_screenheight() // 2) - (850 // 2)
+        self.geometry(f"1000x850+{x}+{y}")
 
         # Блокировать закрытие крестиком
         self.protocol("WM_DELETE_WINDOW", self.on_cancel)

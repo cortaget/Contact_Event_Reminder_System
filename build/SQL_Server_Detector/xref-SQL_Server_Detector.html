@@ -26,7 +26,6 @@ imports:
  &#8226;   <a href="#collections.abc">collections.abc</a>
  &#8226;   <a href="#copyreg">copyreg</a>
  &#8226;   <a href="#customtkinter">customtkinter</a>
- &#8226;   <a href="#database_initializer">database_initializer</a>
  &#8226;   <a href="#encodings">encodings</a>
  &#8226;   <a href="#encodings.aliases">encodings.aliases</a>
  &#8226;   <a href="#encodings.ascii">encodings.ascii</a>
@@ -171,6 +170,7 @@ imports:
  &#8226;   <a href="#re._compiler">re._compiler</a>
  &#8226;   <a href="#re._constants">re._constants</a>
  &#8226;   <a href="#re._parser">re._parser</a>
+ &#8226;   <a href="#repositories.config_repository">repositories.config_repository</a>
  &#8226;   <a href="#reprlib">reprlib</a>
  &#8226;   <a href="#services.notification_service">services.notification_service</a>
  &#8226;   <a href="#sre_compile">sre_compile</a>
@@ -182,7 +182,7 @@ imports:
  &#8226;   <a href="#time">time</a>
  &#8226;   <a href="#traceback">traceback</a>
  &#8226;   <a href="#types">types</a>
- &#8226;   <a href="#ui.database_setup_window">ui.database_setup_window</a>
+ &#8226;   <a href="#ui.database_config_window">ui.database_config_window</a>
  &#8226;   <a href="#ui.main_window">ui.main_window</a>
  &#8226;   <a href="#ui.reminder_notification_window">ui.reminder_notification_window</a>
  &#8226;   <a href="#warnings">warnings</a>
@@ -3115,8 +3115,9 @@ imports:
   <div class="import">
 imported by:
     <a href="#database">database</a>
- &#8226;   <a href="#database_initializer">database_initializer</a>
+ &#8226;   <a href="#repositories.config_repository">repositories.config_repository</a>
  &#8226;   <a href="#services.notification_service">services.notification_service</a>
+ &#8226;   <a href="#ui.database_config_window">ui.database_config_window</a>
  &#8226;   <a href="#ui.database_setup_window">ui.database_setup_window</a>
  &#8226;   <a href="#ui.screens.settings_screen">ui.screens.settings_screen</a>
 
@@ -3537,6 +3538,7 @@ imported by:
  &#8226;   <a href="#customtkinter.windows">customtkinter.windows</a>
  &#8226;   <a href="#customtkinter.windows.widgets.core_widget_classes.ctk_base_class">customtkinter.windows.widgets.core_widget_classes.ctk_base_class</a>
  &#8226;   <a href="#main.py">main.py</a>
+ &#8226;   <a href="#ui.database_config_window">ui.database_config_window</a>
  &#8226;   <a href="#ui.database_setup_window">ui.database_setup_window</a>
  &#8226;   <a href="#ui.forms.event_form">ui.forms.event_form</a>
  &#8226;   <a href="#ui.forms.group_form">ui.forms.group_form</a>
@@ -4739,25 +4741,6 @@ imported by:
  &#8226;   <a href="#repositories.person_repository">repositories.person_repository</a>
  &#8226;   <a href="#repositories.report_repository">repositories.report_repository</a>
  &#8226;   <a href="#services.import_service">services.import_service</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="database_initializer"></a>
-  <a target="code" href="///D:/%D1%81%D0%B5%D0%B9/PYCHARM/Event_Reminder_System/database_initializer.py" type="text/plain"><tt>database_initializer</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#config">config</a>
- &#8226;   <a href="#os">os</a>
- &#8226;   <a href="#pyodbc">pyodbc</a>
- &#8226;   <a href="#traceback">traceback</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#main.py">main.py</a>
 
   </div>
 
@@ -10773,7 +10756,6 @@ imported by:
  &#8226;   <a href="#customtkinter.windows.widgets.font.font_manager">customtkinter.windows.widgets.font.font_manager</a>
  &#8226;   <a href="#customtkinter.windows.widgets.theme.theme_manager">customtkinter.windows.widgets.theme.theme_manager</a>
  &#8226;   <a href="#darkdetect._mac_detect">darkdetect._mac_detect</a>
- &#8226;   <a href="#database_initializer">database_initializer</a>
  &#8226;   <a href="#email.utils">email.utils</a>
  &#8226;   <a href="#fnmatch">fnmatch</a>
  &#8226;   <a href="#genericpath">genericpath</a>
@@ -11728,8 +11710,9 @@ imports:
   <div class="import">
 imported by:
     <a href="#database">database</a>
- &#8226;   <a href="#database_initializer">database_initializer</a>
+ &#8226;   <a href="#repositories.config_repository">repositories.config_repository</a>
  &#8226;   <a href="#services.notification_service">services.notification_service</a>
+ &#8226;   <a href="#ui.database_config_window">ui.database_config_window</a>
  &#8226;   <a href="#ui.database_setup_window">ui.database_setup_window</a>
  &#8226;   <a href="#ui.screens.settings_screen">ui.screens.settings_screen</a>
 
@@ -12076,13 +12059,32 @@ imported by:
   <a target="code" href="///D:/%D1%81%D0%B5%D0%B9/PYCHARM/Event_Reminder_System/repositories/__init__.py" type="text/plain"><tt>repositories</tt></a>
 <span class="moduletype">Package</span>  <div class="import">
 imported by:
-    <a href="#repositories.event_repository">repositories.event_repository</a>
+    <a href="#repositories.config_repository">repositories.config_repository</a>
+ &#8226;   <a href="#repositories.event_repository">repositories.event_repository</a>
  &#8226;   <a href="#repositories.event_type_repository">repositories.event_type_repository</a>
  &#8226;   <a href="#repositories.group_repository">repositories.group_repository</a>
  &#8226;   <a href="#repositories.notification_repository">repositories.notification_repository</a>
  &#8226;   <a href="#repositories.person_group_repository">repositories.person_group_repository</a>
  &#8226;   <a href="#repositories.person_repository">repositories.person_repository</a>
  &#8226;   <a href="#repositories.report_repository">repositories.report_repository</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="repositories.config_repository"></a>
+  <a target="code" href="///D:/%D1%81%D0%B5%D0%B9/PYCHARM/Event_Reminder_System/repositories/config_repository.py" type="text/plain"><tt>repositories.config_repository</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config">config</a>
+ &#8226;   <a href="#pyodbc">pyodbc</a>
+ &#8226;   <a href="#repositories">repositories</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
 
   </div>
 
@@ -17960,7 +17962,6 @@ imported by:
  &#8226;   <a href="#asyncio.base_tasks">asyncio.base_tasks</a>
  &#8226;   <a href="#asyncio.format_helpers">asyncio.format_helpers</a>
  &#8226;   <a href="#concurrent.futures.process">concurrent.futures.process</a>
- &#8226;   <a href="#database_initializer">database_initializer</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#main.py">main.py</a>
@@ -18427,11 +18428,31 @@ imported by:
   <a target="code" href="-" type="text/plain"><tt>ui</tt></a>
 <span class="moduletype">NamespacePackage</span>  <div class="import">
 imported by:
-    <a href="#ui.database_setup_window">ui.database_setup_window</a>
+    <a href="#ui.database_config_window">ui.database_config_window</a>
+ &#8226;   <a href="#ui.database_setup_window">ui.database_setup_window</a>
  &#8226;   <a href="#ui.forms">ui.forms</a>
  &#8226;   <a href="#ui.main_window">ui.main_window</a>
  &#8226;   <a href="#ui.reminder_notification_window">ui.reminder_notification_window</a>
  &#8226;   <a href="#ui.screens">ui.screens</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="ui.database_config_window"></a>
+  <a target="code" href="///D:/%D1%81%D0%B5%D0%B9/PYCHARM/Event_Reminder_System/ui/database_config_window.py" type="text/plain"><tt>ui.database_config_window</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#config">config</a>
+ &#8226;   <a href="#customtkinter">customtkinter</a>
+ &#8226;   <a href="#pyodbc">pyodbc</a>
+ &#8226;   <a href="#ui">ui</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
 
   </div>
 
@@ -18453,8 +18474,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#main.py">main.py</a>
- &#8226;   <a href="#ui.screens.settings_screen">ui.screens.settings_screen</a>
+    <a href="#ui.screens.settings_screen">ui.screens.settings_screen</a>
 
   </div>
 
