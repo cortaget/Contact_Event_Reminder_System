@@ -3,6 +3,7 @@ from ui.main_window import MainWindow
 from repositories.config_repository import DatabaseDeployer
 from services.notification_service import NotificationService
 from ui.reminder_notification_window import ReminderNotificationWindow
+from ui.database_config_window import DatabaseConfigWindow
 import sys
 import threading
 import time
@@ -69,8 +70,34 @@ def check_and_deploy_database():
         return True
 
     print(f"⚠️ База данных не найдена")
+
+    # ===== ПОКАЗАТЬ ОКНО НАСТРОЙКИ БД =====
+    print("📝 Открытие окна настройки подключения...")
+
+    # Создать временное окно
+    temp_root = ctk.CTk()
+    temp_root.withdraw()  # Скрыть главное окно
+
+    # Показать окно настройки
+    config_window = DatabaseConfigWindow(temp_root)
+
+    # Ждать закрытия окна
+    temp_root.wait_window(config_window)
+
+    # Проверить успешность
+    if not config_window.success:
+        print("❌ Настройка БД отменена пользователем")
+        temp_root.destroy()
+        return False
+
+    print("✅ Настройки сохранены")
+    temp_root.destroy()
+    # =======================================
+
     print(f"🚀 Автоматическое развёртывание базы данных...")
 
+    # Пересоздать deployer с новыми настройками
+    deployer = DatabaseDeployer()
     success, message = deployer.deploy_database()
 
     if success:
