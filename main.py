@@ -1,7 +1,6 @@
 import customtkinter as ctk
 from ui.main_window import MainWindow
-from database_initializer import DatabaseInitializer
-from ui.database_setup_window import DatabaseSetupWindow
+from repositories.config_repository import DatabaseDeployer
 from services.notification_service import NotificationService
 from ui.reminder_notification_window import ReminderNotificationWindow
 import sys
@@ -16,7 +15,8 @@ def background_reminder_checker(app):
     while True:
         try:
             # Подождать 1 час (3600 секунд)
-            time.sleep(60)
+            # Для теста: time.sleep(60)
+            time.sleep(3600)
 
             # Проверить напоминания
             print("🔍 Проверка напоминаний...")
@@ -24,7 +24,6 @@ def background_reminder_checker(app):
 
             if reminders:
                 print(f"✅ Найдено {len(reminders)} напоминаний")
-                # Показать окно напоминаний в главном потоке
                 app.after(0, lambda: show_reminders_window(app, reminders, notification_service))
             else:
                 print("✅ Новых напоминаний нет")
@@ -34,7 +33,7 @@ def background_reminder_checker(app):
 
 
 def show_reminders_window(app, reminders, notification_service):
-    """Показать окно напоминаний (вызывается из главного потока)"""
+    """Показать окно напоминаний"""
     try:
         window = ReminderNotificationWindow(app, reminders, notification_service)
     except Exception as e:
@@ -51,13 +50,35 @@ def check_initial_reminders(app):
 
         if reminders:
             print(f"✅ Найдено {len(reminders)} напоминаний")
-            # Показать окно через 2 секунды после запуска
             app.after(2000, lambda: show_reminders_window(app, reminders, notification_service))
         else:
             print("✅ Новых напоминаний нет")
 
     except Exception as e:
-        print(f"❌ Ошибка проверки напоминаний: {e}")
+        print(f"⚠️ Ошибка проверки напоминаний: {e}")
+
+
+def check_and_deploy_database():
+    """Проверить и развернуть БД если нужно"""
+    deployer = DatabaseDeployer()
+
+    print("🔍 Проверка существования базы данных...")
+
+    if deployer.check_database_exists():
+        print(f"✅ База данных найдена")
+        return True
+
+    print(f"⚠️ База данных не найдена")
+    print(f"🚀 Автоматическое развёртывание базы данных...")
+
+    success, message = deployer.deploy_database()
+
+    if success:
+        print(f"✅ {message}")
+        return True
+    else:
+        print(f"❌ {message}")
+        return False
 
 
 if __name__ == "__main__":
@@ -66,51 +87,28 @@ if __name__ == "__main__":
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
-        # Проверка существования БД
-        initializer = DatabaseInitializer()
-        """
-        if not initializer.check_database_exists():
-            # База данных не найдена - показать окно инициализации
-            print("⚠️ База данных не найдена. Запуск мастера настройки...")
+        print("🚀 Запуск Event Reminder System...")
 
-            # Создать временное главное окно
-            root = ctk.CTk()
-            root.withdraw()  # Скрыть главное окно
+        # ===== ПРОВЕРКА И РАЗВЁРТЫВАНИЕ БД =====
+        if not check_and_deploy_database():
+            print("❌ Не удалось развернуть базу данных")
+            print("📝 Перейдите в настройки приложения для ручной настройки")
+            # Продолжаем запуск - пользователь может настроить в Settings
+        # ========================================
 
-            # Показать окно инициализации
-            setup_window = DatabaseSetupWindow(parent=root)
-            setup_window.run_initialization()
-
-            # Ждать закрытия окна
-            root.wait_window(setup_window)
-
-            # Проверить успешность
-            if not setup_window.success:
-                print("❌ Инициализация БД не была завершена. Программа закрывается.")
-                root.destroy()
-                sys.exit(1)
-
-            print("✅ База данных успешно инициализирована!")
-            root.destroy()
-        """
         # Запуск основного приложения
-        print("🚀 Запуск основного приложения...")
         app = MainWindow()
 
         # ===== ФОНОВАЯ СИСТЕМА НАПОМИНАНИЙ =====
-
-        # 1. Проверить напоминания при запуске
         app.after(1000, lambda: check_initial_reminders(app))
 
-        # 2. Запустить фоновый поток проверки (каждый час)
         reminder_thread = threading.Thread(
             target=background_reminder_checker,
             args=(app,),
             daemon=True
         )
         reminder_thread.start()
-        print("✅ Фоновая система напоминаний запущена (проверка каждый час)")
-
+        print("✅ Фоновая система напоминаний запущена")
         # ============================================
 
         app.mainloop()
@@ -124,7 +122,6 @@ if __name__ == "__main__":
             error_window.title("Критическая ошибка")
             error_window.geometry("600x400")
 
-            # Центрировать окно
             error_window.update_idletasks()
             x = (error_window.winfo_screenwidth() // 2) - (600 // 2)
             y = (error_window.winfo_screenheight() // 2) - (400 // 2)
@@ -147,7 +144,6 @@ if __name__ == "__main__":
             error_text = ctk.CTkTextbox(error_window, height=200, width=560, font=ctk.CTkFont(size=11))
             error_text.pack(padx=20, pady=10)
 
-            # Полная информация об ошибке
             import traceback
 
             full_error = f"Chyba: {str(e)}\n\n"
@@ -168,7 +164,6 @@ if __name__ == "__main__":
 
             error_window.mainloop()
         except:
-            # Если GUI не работает, вывести в консоль
             import traceback
 
             print("\n" + "=" * 60)
