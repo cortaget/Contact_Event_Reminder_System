@@ -1,7 +1,7 @@
 ═══════════════════════════════════════════════════════════════════════
 EVENT REMINDER SYSTEM - QUICK START GUIDE
 ═══════════════════════════════════════════════════════════════════════
-Verze: 1.0 | Datum: 12.01.2026 | Autor: [TVOJE JMÉNO]
+Verze: 1.0 | Datum: 12.01.2026 | Autor: Maxim Mazuret
 
 ═══════════════════════════════════════════════════════════════════════
 RYCHLÝ START - JAK SPUSTIT APLIKACI
@@ -20,12 +20,10 @@ Před spuštěním ověřte, že máte nainstalováno:
 
 KROK 2: SPUŠTĚNÍ APLIKACE
 --------------------------
-1. Zkopírujte Event_Reminder_System.exe do libovolné složky
-   Příklad: C:\EventReminder\
 
-2. Dvakrát klikněte na Event_Reminder_System.exe
+1. Dvakrát klikněte na Event_Reminder_System.exe(/dist)
 
-3. Při PRVNÍM spuštění se zobrazí okno "Konfigurace databáze":
+2. Při PRVNÍM spuštění se zobrazí okno "Konfigurace databáze":
 
    ┌─────────────────────────────────────────────────┐
    │ ⚙️ Konfigurace databáze                         │
@@ -39,16 +37,16 @@ KROK 2: SPUŠTĚNÍ APLIKACE
    │ [✅ Uložit a pokračovat]                        │
    └─────────────────────────────────────────────────┘
 
-4. Do pole "SQL Server" zadejte:
+3. Do pole "SQL Server" zadejte:
    - Pokud máte SQL Server Express: .\SQLEXPRESS
    - nebo jine co je potreba
 
-5. Klikněte "Otestovat připojení"
+4. Klikněte "Otestovat připojení"
    → Musí se zobrazit: ✅ Připojení úspěšné!(po prvnim spusteni databaze jeste neexistuje, zmacknete Uložit a pokračovat)
 
-6. Klikněte "Uložit a pokračovat"
+5. Klikněte "Uložit a pokračovat"
 
-7. HOTOVO! Databáze se vytvoří automaticky a aplikace se spustí
+6. HOTOVO! Databáze se vytvoří automaticky a aplikace se spustí
 
 
 ═══════════════════════════════════════════════════════════════════════
