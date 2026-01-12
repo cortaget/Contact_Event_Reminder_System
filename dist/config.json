@@ -1,6 +1,6 @@
 {
     "database": {
-        "server": "Cronos\\SQLEXPRESS01",
+        "server": ".\\SQLEXPRESS",
         "database": "Contact_Event_Reminder_System",
         "driver": "ODBC Driver 17 for SQL Server",
         "trusted_connection": true

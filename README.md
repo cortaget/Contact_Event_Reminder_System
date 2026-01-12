@@ -1,396 +1,100 @@
-# 📅 EVENT REMINDER SYSTEM
-### Personal Contacts & Events Manager with Automatic Reminders
+═══════════════════════════════════════════════════════════════════════
+EVENT REMINDER SYSTEM - QUICK START GUIDE
+═══════════════════════════════════════════════════════════════════════
+Verze: 1.0 | Datum: 12.01.2026 | Autor: [TVOJE JMÉNO]
 
----
+═══════════════════════════════════════════════════════════════════════
+RYCHLÝ START - JAK SPUSTIT APLIKACI
+═══════════════════════════════════════════════════════════════════════
 
-## 📋 PROJECT INFORMATION
+KROK 1: KONTROLA POŽADAVKŮ
+---------------------------
+Před spuštěním ověřte, že máte nainstalováno:
 
-| Field | Value |
-|-------|-------|
-| **Project Name** | Event Reminder System |
-| **Author** | [ТВОЁ ИМЯ] |
-| **Email** | [ТВОЙ EMAIL] |
-| **School** | [НАЗВАНИЕ ШКОЛЫ] |
-| **Course** | Databázové systémy |
-| **Date** | 11.01.2026 |
-| **Version** | 1.0 |
-| **Type** | 🎓 School Project |
+✅ SQL Server 2016+ nebo SQL Server Express (ZDARMA)
+   Stáhnout: https://www.microsoft.com/sql-server/sql-server-downloads
+   
+✅ ODBC Driver 17 for SQL Server
+   Stáhnout: https://go.microsoft.com/fwlink/?linkid=2249004
 
----
 
-## 📖 TABLE OF CONTENTS
+KROK 2: SPUŠTĚNÍ APLIKACE
+--------------------------
+1. Zkopírujte Event_Reminder_System.exe do libovolné složky
+   Příklad: C:\EventReminder\
 
-1. [Executive Summary](#1-executive-summary)
-2. [User Requirements](#2-user-requirements)
-3. [System Architecture](#3-system-architecture)
-4. [Database Design](#4-database-design)
-5. [Application Behavior](#5-application-behavior)
-6. [Configuration](#6-configuration)
-7. [Installation Guide](#7-installation-guide)
-8. [Error Handling](#8-error-handling)
-9. [Third-Party Libraries](#9-third-party-libraries)
-10. [Project Conclusion](#10-project-conclusion)
+2. Dvakrát klikněte na Event_Reminder_System.exe
 
----
+3. Při PRVNÍM spuštění se zobrazí okno "Konfigurace databáze":
 
-## 1. EXECUTIVE SUMMARY
+   ┌─────────────────────────────────────────────────┐
+   │ ⚙️ Konfigurace databáze                         │
+   ├─────────────────────────────────────────────────┤
+   │ SQL Server: [ .\SQLEXPRESS                 ]    │
+   │ Název databáze: [ Contact_Event_Reminder_S... ] │
+   │ ODBC Driver: [ ODBC Driver 17 for SQL Server ]  │
+   │ ☑ Použít Windows Authentication                 │
+   │                                                  │
+   │ [🔍 Otestovat připojení]                        │
+   │ [✅ Uložit a pokračovat]                        │
+   └─────────────────────────────────────────────────┘
 
-### 1.1 Project Overview
+4. Do pole "SQL Server" zadejte:
+   - Pokud máte SQL Server Express: .\SQLEXPRESS
+   - nebo jine co je potreba
 
-Event Reminder System je desktopová aplikace pro správu osobních kontaktů a důležitých událostí s automatickým systémem připomínek. Aplikace sleduje narozeniny, výročí a vlastní události, zajišťuje včasná upozornění a pomáhá udržovat kontakty s důležitými lidmi.
+5. Klikněte "Otestovat připojení"
+   → Musí se zobrazit: ✅ Připojení úspěšné!(po prvnim spusteni databaze jeste neexistuje, zmacknete Uložit a pokračovat)
 
-### 1.2 Key Features
+6. Klikněte "Uložit a pokračovat"
 
-| Feature | Description |
-|---------|-------------|
-| 👤 **Contact Management** | Uchovávání osobních informací (jméno, datum narození, pohlaví) |
-| 📅 **Event Tracking** | Sledování narozenin, výročí a vlastních událostí |
-| 🔔 **Automated Reminders** | Automatické kontroly každou hodinu s vyskakovacími upozorněními |
-| 👥 **Group Organization** | Kategorizace kontaktů do skupin (rodina, prátelé, práce) |
-| 📥 **CSV Import** | Hromadný import kontaktů ze souborů |
-| 📊 **Reports** | Statistiky a přehledy nadcházejících událostí |
+7. HOTOVO! Databáze se vytvoří automaticky a aplikace se spustí
 
-### 1.3 Technology Stack
 
-┌─────────────────────────────────┐
-│ Frontend: CustomTkinter 5.2.2 │
-│ Language: Python 3.10+ │
-│ Database: MS SQL Server 2016+ │
-│ Driver: ODBC Driver 17 │
-│ Architecture: Desktop App │
-└─────────────────────────────────┘
+═══════════════════════════════════════════════════════════════════════
+ALTERNATIVNÍ METODA: SPUŠTĚNÍ Z PYTHONU (PRO VÝVOJÁŘE)
+═══════════════════════════════════════════════════════════════════════
 
-text
+Pokud máte zdrojové kódy a chcete spustit aplikaci přes Python:
 
----
+KROK 1: INSTALACE PYTHONU
+--------------------------
+1. Stáhněte Python 3.10 nebo novější:
+   https://www.python.org/downloads/
 
-## 2. USER REQUIREMENTS
+2. Při instalaci ZAŠKRTNĚTE: "Add Python to PATH"
 
-### 2.1 Use Case Diagram
+3. Ověřte instalaci (otevřete CMD):
+   python --version
+   → Mělo by zobrazit: Python 3.10.x nebo vyšší
 
-```mermaid
-graph TD
-    User((User))
-    
-    User --> UC1[Manage Contacts]
-    User --> UC2[Manage Events]
-    User --> UC3[View Reminders]
-    User --> UC4[Manage Groups]
-    User --> UC5[Import Data]
-    
-    UC1 --> UC1A[Add Contact]
-    UC1 --> UC1B[Edit Contact]
-    UC1 --> UC1C[Delete Contact]
-    
-    UC2 --> UC2A[Create Event]
-    UC2 --> UC2B[Set Reminder]
-    UC2 --> UC2C[Edit Event]
-    
-    UC3 --> UC3A[Acknowledge]
-    UC3 --> UC3B[Postpone]
-    
-    UC4 --> UC4A[Create Group]
-    UC4 --> UC4B[Add Members]
-    
-    UC5 --> UC5A[Import CSV]
 
-2.2 User Stories
-ID	User Story	Acceptance Criteria
-US-1	As a user, I want to add contacts	Can enter name, birth date, gender and save
-US-2	As a user, I want to create events linked to contacts	Can select person, event type, date, and reminder settings
-US-3	As a user, I want automatic reminders	App shows notifications X days before events
-US-4	As a user, I want to organize contacts into groups	Can create groups and assign multiple contacts
-US-5	As a user, I want to import contacts from CSV	Can bulk import with field mapping
-3. SYSTEM ARCHITECTURE
-3.1 Three-Layer Architecture
+KROK 2: INSTALACE ZÁVISLOSTÍ
+-----------------------------
+1. Otevřete příkazový řádek (CMD) nebo PowerShell
 
-text
-graph TB
-    subgraph Presentation["📱 PRESENTATION LAYER"]
-        UI1[Main Window]
-        UI2[Dashboard Screen]
-        UI3[Persons Screen]
-        UI4[Events Screen]
-        UI5[Groups Screen]
-        UI6[Reminder Window]
-    end
-    
-    subgraph Business["⚙️ BUSINESS LOGIC LAYER"]
-        SVC1[Notification Service]
-        SVC2[Validation Logic]
-        SVC3[Business Rules]
-    end
-    
-    subgraph Data["💾 DATA ACCESS LAYER"]
-        REPO1[Person Repository]
-        REPO2[Event Repository]
-        REPO3[Group Repository]
-        REPO4[Database Deployer]
-    end
-    
-    subgraph DB["🗄️ DATABASE LAYER"]
-        SQL[(SQL Server Database)]
-    end
-    
-    Presentation --> Business
-    Business --> Data
-    Data --> DB
+2. Přejděte do složky s projektem:
+   cd C:\cesta\k\projektu\Event_Reminder_System
 
-3.2 Class Diagram (Core Components)
+3. Nainstalujte požadované knihovny:
+   pip install -r requirements.txt
 
-text
-classDiagram
-    class MainWindow {
-        +show_screen()
-        +navigate()
-        +switch_theme()
-    }
-    
-    class PersonRepository {
-        +create(person)
-        +read(id)
-        +update(id, person)
-        +delete(id)
-        +get_all()
-    }
-    
-    class EventRepository {
-        +create(event)
-        +get_upcoming(days)
-        +get_by_person(person_id)
-        +delete(id)
-    }
-    
-    class NotificationService {
-        +check_pending_reminders()
-        +mark_as_sent(event_id)
-        -calculate_reminder_date()
-    }
-    
-    class DatabaseDeployer {
-        +check_database_exists()
-        +deploy_database()
-        -execute_sql_script()
-    }
-    
-    MainWindow --> PersonRepository
-    MainWindow --> EventRepository
-    NotificationService --> EventRepository
-    PersonRepository --> Database
-    EventRepository --> Database
+   Instaluje se:
+   • customtkinter==5.2.2  (GUI framework)
+   • pyodbc==5.0.1         (SQL Server připojení)
+   • Pillow==10.2.0        (zpracování obrázků)
+   • python-dateutil==2.8.2 (práce s datumy)
 
-3.3 Deployment Architecture
+4. Počkejte cca 1-2 minuty na dokončení instalace
+═══════════════════════════════════════════════════════════════════════
+POKROČILÁ KONFIGURACE (soubor config.json)
+═══════════════════════════════════════════════════════════════════════
 
-text
-┌───────────────────────────────────┐
-│    USER'S WINDOWS PC              │
-│                                   │
-│  ┌─────────────────────────────┐ │
-│  │ Event_Reminder_System.exe   │ │
-│  │  -  Python Runtime           │ │
-│  │  -  CustomTkinter GUI        │ │
-│  │  -  Business Logic           │ │
-│  └──────────┬──────────────────┘ │
-│             │ ODBC                │
-│             │ TCP/IP :1433        │
-│             ▼                     │
-│  ┌─────────────────────────────┐ │
-│  │ SQL Server (LocalDB/Express)│ │
-│  │  -  Database Engine          │ │
-│  │  -  Contact_Event_Reminder   │ │
-│  └─────────────────────────────┘ │
-│                                   │
-│  config.json ← Configuration     │
-└───────────────────────────────────┘
 
-4. DATABASE DESIGN
-4.1 Entity-Relationship Diagram
-
-text
-erDiagram
-    PERSON ||--o{ EVENT : has
-    PERSON ||--o{ PERSON_GROUP : belongs
-    GROUP ||--o{ PERSON_GROUP : contains
-    EVENT ||--|| EVENT_TYPE : categorized
-    EVENT ||--o{ NOTIFICATION : triggers
-    
-    PERSON {
-        int id PK
-        nvarchar first_name
-        nvarchar last_name
-        date birth_date
-        nvarchar gender
-        bit is_active
-        datetime2 created_at
-    }
-    
-    EVENT {
-        int id PK
-        int person_id FK
-        int event_type_id FK
-        date event_date
-        int reminder_days_before
-        time reminder_time
-        datetime2 created_at
-    }
-    
-    EVENT_TYPE {
-        int id PK
-        nvarchar name UK
-    }
-    
-    GROUP {
-        int id PK
-        nvarchar name
-        datetime2 created_at
-    }
-    
-    PERSON_GROUP {
-        int person_id PK_FK
-        int group_id PK_FK
-        datetime2 added_at
-    }
-    
-    NOTIFICATION {
-        int id PK
-        int event_id FK
-        datetime2 sent_at
-        nvarchar status
-    }
-    
-    USER {
-        int id PK
-        nvarchar name
-        nvarchar email UK
-        bit notifications_enabled
-        datetime2 created_at
-    }
-
-4.2 Database Schema
-Table	Primary Key	Foreign Keys	Constraints
-person	id	-	gender IN ('male','female','other')
-event	id	person_id, event_type_id	reminder_days_before >= 0
-event_type	id	-	name UNIQUE
-group	id	-	-
-person_group	person_id, group_id	person_id, group_id	CASCADE DELETE
-notification	id	event_id	status IN ('planned','sent','failed')
-user	id	-	email UNIQUE
-4.3 Database Views
-View Name	Purpose	Key Columns
-v_upcoming_events	Shows future events with person details	event_id, person_name, event_date, days_until_event
-v_event_summary	Categorizes events by time	event_id, person_name, time_category ('dnes', 'tento týden', etc.)
-v_group_statistics	Group member and event counts	group_name, total_persons, total_events
-4.4 Import/Export Schema
-
-CSV Import Format:
-
-text
-first_name,last_name,birth_date,gender
-Jan,Novák,1990-05-15,male
-Marie,Svobodová,1985-12-20,female
-
-Field	Type	Required	Format	Example
-first_name	string	✅ Yes	-	Jan
-last_name	string	✅ Yes	-	Novák
-birth_date	date	❌ No	YYYY-MM-DD	1990-05-15
-gender	string	❌ No	male/female/other	male
-5. APPLICATION BEHAVIOR
-5.1 Application State Diagram
-
-text
-stateDiagram-v2
-    [*] --> Startup
-    Startup --> CheckDB: Launch
-    
-    CheckDB --> ConfigDialog: DB Not Found
-    CheckDB --> MainWindow: DB Exists
-    
-    ConfigDialog --> DeployDB: Save Config
-    ConfigDialog --> [*]: Cancel
-    
-    DeployDB --> MainWindow: Success
-    DeployDB --> Error: Failure
-    
-    MainWindow --> Dashboard: Navigate
-    MainWindow --> Persons: Navigate
-    MainWindow --> Events: Navigate
-    MainWindow --> Groups: Navigate
-    MainWindow --> Settings: Navigate
-    
-    Dashboard --> ReminderCheck: Every Hour
-    ReminderCheck --> ReminderWindow: Events Found
-    ReminderCheck --> Dashboard: No Events
-    
-    ReminderWindow --> Dashboard: Confirm/Postpone
-    
-    Error --> [*]: Exit
-
-5.2 Reminder System Activity Diagram
-
-text
-flowchart TD
-    Start([Application Starts]) --> Init[Initialize Services]
-    Init --> Wait[Wait 1 Hour]
-    Wait --> Check{Check Pending<br/>Reminders}
-    
-    Check -->|No Events| Wait
-    Check -->|Events Found| Query[Query v_upcoming_events]
-    
-    Query --> Filter{Filter Events:<br/>days_until <= reminder_days}
-    Filter -->|Matches Found| NotifCheck{Check if<br/>Already Sent Today}
-    Filter -->|No Matches| Wait
-    
-    NotifCheck -->|Not Sent| Display[Display Reminder Window]
-    NotifCheck -->|Already Sent| Wait
-    
-    Display --> UserAction{User Action}
-    UserAction -->|Confirm| MarkSent[Mark as 'sent'<br/>in notification table]
-    UserAction -->|Postpone| Close[Close Window]
-    
-    MarkSent --> Wait
-    Close --> Wait
-
-5.3 Key Workflows
-
-Add New Event Workflow:
-
-    User clicks "Události" → "+ Přidat"
-
-    System loads persons and event types from DB
-
-    User fills form (person, type, date, reminder_days)
-
-    System validates inputs
-
-    System executes INSERT with OUTPUT INSERTED.id
-
-    System shows success message
-
-    Table refreshes with new event
-
-Reminder Check Workflow:
-
-    Background thread sleeps 3600 seconds
-
-    Wakes up and calls NotificationService.check_pending_reminders()
-
-    Executes query on v_upcoming_events view
-
-    Filters where days_until_event <= reminder_days_before
-
-    Checks notification table for existing records today
-
-    If new reminders exist, schedules ReminderNotificationWindow in main thread
-
-    User acknowledges → INSERT into notification with status='sent'
-
-6. CONFIGURATION
-6.1 Configuration File: config.json
-
-json
+STRUKTURA SOUBORU:
 {
     "database": {
-        "server": ".",
+        "server": ".\\SQLEXPRESS",
         "database": "Contact_Event_Reminder_System",
         "driver": "ODBC Driver 17 for SQL Server",
         "trusted_connection": true
@@ -400,269 +104,191 @@ json
     }
 }
 
-6.2 Configuration Options
-Parameter	Type	Values	Description
-server	string	., localhost, server\instance	SQL Server instance name
-database	string	any valid DB name	Target database name
-driver	string	ODBC Driver 17 for SQL Server	ODBC driver name
-trusted_connection	boolean	true / false	Use Windows Authentication
-default_reminder_days	integer	1-365	Default days before event to remind
-6.3 Configuration Locations
+POPIS PARAMETRŮ:
+----------------
 
-    Development: Project root directory
-
-    Production (EXE): Same directory as .exe file
-
-    Auto-created: If missing, created with defaults on first run
-
-7. INSTALLATION GUIDE
-7.1 System Requirements
-Component	Requirement
-OS	Windows 10/11 (64-bit)
-RAM	2 GB (4 GB recommended)
-Disk Space	200 MB
-SQL Server	SQL Server 2016+ or SQL Server Express (free)
-ODBC Driver	ODBC Driver 17 for SQL Server
-7.2 Installation Steps
-
-STEP 1: Install SQL Server
-
-text
-1. Download SQL Server Express:
-   https://www.microsoft.com/sql-server/sql-server-downloads
-2. Run installer → Choose "Basic"
-3. Note instance name (e.g., localhost\SQLEXPRESS)
-
-STEP 2: Install ODBC Driver
-
-text
-1. Download ODBC Driver 17:
-   https://go.microsoft.com/fwlink/?linkid=2249004
-2. Run msodbcsql.msi
-3. Complete installation
-
-STEP 3: Run Application
-
-text
-1. Double-click Event_Reminder_System.exe
-2. First launch: Configuration window appears
-3. Enter SQL Server name (e.g., . or localhost\SQLEXPRESS)
-4. Click "Otestovat připojení" (Test Connection)
-5. Click "Uložit a pokračovat" (Save & Continue)
-6. Database deploys automatically
-7. Application starts
-
-STEP 4: Verify Installation
-
-text
-1. Open SQL Server Management Studio (SSMS)
-2. Connect to your server
-3. Verify database "Contact_Event_Reminder_System" exists
-4. Check tables: person, event, group, etc.
-
-8. ERROR HANDLING
-8.1 Common Errors
-Error Code	Error Message	Cause	Solution
-18456	Login failed for user	Authentication failure	Enable Windows Authentication in SQL Server
-4060	Cannot open database	Database doesn't exist	Run database deployment from Settings
-08001	Cannot connect to server	SQL Server not running	Start SQL Server service via services.msc
-28000	SQL Server login error	Permissions issue	Verify user has db_owner role
-42S02	Invalid object name (view)	Views not created	Reinitialize database from Settings
-8.2 Error States
-
-Application Launch Errors:
-
-text
-IF DB_NOT_FOUND:
-    → Show DatabaseConfigWindow
-    → User configures connection
-    → Deploy database automatically
+[database]
+  "server": ".\\SQLEXPRESS"
+    └─ Název SQL Server instance
+       Možnosti:
+       • "." = localhost (výchozí instance)
+       • ".\\SQLEXPRESS" = SQL Server Express (pojmenovaná instance)
+       • "localhost" = to samé jako "."
+       • "192.168.1.100" = vzdálený server (IP adresa)
+       • "SERVER-PC\\SQLEXPRESS" = vzdálený pojmenovaný server
     
-IF DB_CONNECTION_FAILED:
-    → Show error dialog with details
-    → Suggest checking SQL Server status
-    → Allow manual configuration in Settings
-
-Runtime Errors:
-
-text
-IF QUERY_FAILED:
-    → Log error to console
-    → Show user-friendly message
-    → Continue application operation
+  "database": "Contact_Event_Reminder_System"
+    └─ Název databáze (NEMĚŇTE, pokud nevíte co děláte)
     
-IF REMINDER_CHECK_FAILED:
-    → Log error
-    → Skip this check cycle
-    → Retry in next hour
+  "driver": "ODBC Driver 17 for SQL Server"
+    └─ Název ODBC driveru
+       Možnosti:
+       • "ODBC Driver 17 for SQL Server" (doporučeno)
+       • "ODBC Driver 18 for SQL Server" (novější verze)
+       • "SQL Server" (starší, nedoporučeno)
+    
+  "trusted_connection": true
+    └─ Použít Windows Authentication (ověření pomocí Windows účtu)
+       • true = ANO, použít Windows přihlášení (DOPORUČENO)
+       • false = NE, použít SQL Server Authentication
+                 (vyžaduje username a password - NENÍ IMPLEMENTOVÁNO)
 
-8.3 Troubleshooting Guide
+[settings]
+  "default_reminder_days": 7
+    └─ Výchozí počet dní před událostí pro připomínku
+       • Číslo 1-365
+       • Příklad: 7 = připomenout 7 dní předem
+       • Lze změnit i v aplikaci v sekci "Nastavení"
 
-Problem: Application won't start
 
-text
-1. Check ODBC Driver is installed
-2. Verify SQL Server is running (services.msc)
-3. Review config.json for correct server name
-4. Try running as Administrator
+PŘÍKLADY KONFIGURACE:
+---------------------
 
-Problem: Reminders not showing
+1. LOKÁLNÍ SQL EXPRESS (nejčastější):
+{
+    "database": {
+        "server": ".\\SQLEXPRESS",
+        ...
+    }
+}
 
-text
-1. Verify event date is in future
-2. Check reminder_days_before >= days_until_event
-3. Look for existing notifications in database:
-   SELECT * FROM notification WHERE event_id = X;
-4. Delete test notifications if needed
+2. LOKÁLNÍ VÝCHOZÍ INSTANCE:
+{
+    "database": {
+        "server": ".",
+        ...
+    }
+}
 
-9. THIRD-PARTY LIBRARIES
-9.1 Python Dependencies
-Library	Version	Purpose	License
-customtkinter	5.2.2	Modern GUI framework	MIT
-pyodbc	5.0.1	SQL Server database connectivity	MIT
-Pillow	10.2.0	Image processing for GUI	HPND
-python-dateutil	2.8.2	Date/time utilities	Apache 2.0
-pyinstaller	6.3.0	Build tool for creating EXE	GPL
-9.2 System Dependencies
-Component	Version	Purpose
-Python	3.10+	Runtime environment
-ODBC Driver 17	Latest	SQL Server connectivity
-SQL Server	2016+	Database engine
-Windows SDK	-	System integration
-9.3 License Compliance
+3. VZDÁLENÝ SERVER:
+{
+    "database": {
+        "server": "192.168.1.50\\SQLEXPRESS",
+        ...
+    }
+}
 
-All third-party libraries are open-source with permissive licenses (MIT, Apache 2.0) allowing educational and commercial use. This project complies with all license requirements.
-10. PROJECT CONCLUSION
-10.1 Achievements
 
-✅ Fully Functional Desktop Application - Complete CRUD operations for contacts, events, and groups
-✅ Automated Reminder System - Background service with hourly checks and popup notifications
-✅ Professional Database Design - Normalized schema with 7 tables, 3 views, referential integrity
-✅ User-Friendly Interface - Modern dark theme with intuitive navigation
-✅ Robust Error Handling - Graceful degradation and informative error messages
-✅ Import/Export Functionality - CSV import for bulk operations
-✅ Auto-Deployment - Database automatically deploys on first run
-10.2 Technical Highlights
-Feature	Implementation
-Architecture	Three-layer (Presentation, Business, Data Access)
-Design Pattern	Repository Pattern for data access
-Threading	Background daemon thread for reminders
-GUI Framework	CustomTkinter with responsive screens
-Database	SQL Server with views, triggers, and constraints
-Deployment	Single EXE file with embedded Python runtime
-10.3 Learning Outcomes
+═══════════════════════════════════════════════════════════════════════
+⚠️ ŘEŠENÍ PROBLÉMŮ (pokud aplikace nefunguje)
+═══════════════════════════════════════════════════════════════════════
 
-This project demonstrated proficiency in:
+PROBLÉM 1: Aplikace se nespustí - chybí soubory
+------------------------------------------------
+Chyba: "VCRUNTIME140.dll was not found"
 
-    Database Design: E-R modeling, normalization, views, stored procedures
+ŘEŠENÍ:
+→ Stáhněte Microsoft Visual C++ Redistributable:
+  https://aka.ms/vs/17/release/vc_redist.x64.exe
+→ Nainstalujte a restartujte počítač
 
-    Software Engineering: Layered architecture, separation of concerns, modularity
 
-    Python Development: GUI programming, threading, database connectivity
+PROBLÉM 2: Chyba "Nelze se připojit k serveru"
+-----------------------------------------------
+Chyba: "08001 Cannot connect to SQL Server"
 
-    SQL Server: T-SQL, ODBC, Windows Authentication
+ŘEŠENÍ:
+A) Zkontrolujte, že SQL Server běží:
+   1. Win + R → services.msc → Enter
+   2. Najděte "SQL Server (SQLEXPRESS)" nebo "SQL Server (MSSQLSERVER)"
+   3. Pokud je "Stopped" → Pravý klik → Start
 
-    User Experience: Intuitive workflows, error handling, configuration management
+B) Ověřte název serveru:
+   1. Otevřete SQL Server Management Studio (SSMS)
+   2. V dialogu připojení vidíte název serveru
+   3. Zkopírujte ho do config.json (pole "server")
 
-10.4 Future Enhancements
+C) Zkontrolujte TCP/IP protokol:
+   1. Otevřete "SQL Server Configuration Manager"
+   2. SQL Server Network Configuration → Protocols for SQLEXPRESS
+   3. TCP/IP → Enable
 
-🔮 Potential Improvements:
 
-    Email/SMS notifications via external API
+PROBLÉM 3: Chyba "Login failed" (18456)
+----------------------------------------
+Chyba: "18456 Login failed for user"
 
-    Cloud synchronization with Azure SQL
+ŘEŠENÍ:
+A) Použijte Windows Authentication:
+   V config.json: "trusted_connection": true
 
-    Mobile companion app (React Native)
+B) Udělte oprávnění:
+   1. Otevřete SSMS jako administrátor
+   2. Security → Logins → Najděte svůj Windows účet
+   3. Pravý klik → Properties → User Mapping
+   4. Zaškrtněte databázi Contact_Event_Reminder_System
+   5. Role: db_owner
 
-    Advanced reporting with charts (matplotlib)
 
-    Recurring events (daily, weekly, monthly)
+PROBLÉM 4: Chyba "Cannot open database" (4060)
+-----------------------------------------------
+Chyba: "4060 Cannot open database Contact_Event_Reminder_System"
 
-    Multi-user support with authentication
+ŘEŠENÍ:
+A) Databáze neexistuje - vytvořte ji:
+   1. V aplikaci: Levé menu → "Nastavení"
+   2. Klikněte "🔄 Inicializovat databázi"
+   3. Potvrďte
 
-10.5 Statistics
+B) Nebo ručně v SSMS:
+   1. Otevřete soubor config.sql v SSMS
+   2. Stiskněte F5 (Execute)
 
-text
-Project Metrics:
-├── Lines of Code: ~3,500
-├── Python Files: 25
-├── Database Tables: 7
-├── Database Views: 3
-├── Features Implemented: 15
-├── Development Time: [X weeks]
-└── Final EXE Size: ~65 MB
 
-📄 APPENDICES
-A. Project Structure
+PROBLÉM 5: ODBC Driver není nainstalován
+-----------------------------------------
+Chyba: "Data source name not found"
 
-text
-Event_Reminder_System/
-├── main.py                          # Entry point
-├── config.py                        # Configuration manager
-├── requirements.txt                 # Dependencies
-├── README.txt                       # Installation guide
-├── database_export.sql              # DB deployment script
-├── DOCUMENTATION.md                 # This file
-│
-├── ui/                              # Presentation layer
-│   ├── main_window.py
-│   ├── dashboard_screen.py
-│   ├── persons_screen.py
-│   ├── events_screen.py
-│   ├── groups_screen.py
-│   ├── settings_screen.py
-│   └── reminder_notification_window.py
-│
-├── repositories/                    # Data access layer
-│   ├── person_repository.py
-│   ├── event_repository.py
-│   ├── group_repository.py
-│   ├── event_type_repository.py
-│   └── database_deployer.py
-│
-├── services/                        # Business logic layer
-│   └── notification_service.py
-│
-└── dist/                           # Build output
-    └── Event_Reminder_System.exe
+ŘEŠENÍ:
+→ Stáhněte a nainstalujte ODBC Driver 17:
+  https://go.microsoft.com/fwlink/?linkid=2249004
+→ Po instalaci restartujte aplikaci
 
-B. SQL Server Setup Commands
 
-sql
--- Check SQL Server version
-SELECT @@VERSION;
+PROBLÉM 6: Připomínky se nezobrazují
+-------------------------------------
+Připomínky fungují, ale žádné se neobjeví
 
--- Check databases
-SELECT name FROM sys.databases;
+ŘEŠENÍ:
+A) Zkontrolujte datum události:
+   - Musí být v BUDOUCNOSTI
+   - Musí být <= "Dní předem" od dnešního data
+   
+B) Zkontrolujte notification tabulku:
+   V SSMS:
+   SELECT * FROM notification WHERE event_id = [ID_UDÁLOSTI]
+   → Pokud existuje záznam status='sent' pro dnes, připomínka se již zobrazila
 
--- Check if application DB exists
-SELECT database_id FROM sys.databases 
-WHERE name = 'Contact_Event_Reminder_System';
 
--- Grant permissions to user
-USE Contact_Event_Reminder_System;
-ALTER ROLE db_owner ADD MEMBER [YourWindowsUser];
+PROBLÉM 7: Import CSV nefunguje
+--------------------------------
+Chyba při importu CSV souboru
 
-C. Build Commands
+ŘEŠENÍ:
+CSV soubor MUSÍ mít tyto sloupce (přesně takto):
+first_name,last_name,birth_date,gender
 
-bash
-# Install dependencies
-pip install -r requirements.txt
+Příklad správného CSV:
+first_name,last_name,birth_date,gender
+Jan,Novák,1990-05-15,male
+Marie,Svobodová,1985-12-20,female
 
-# Run from source
-python main.py
+Poznámky:
+- První řádek = názvy sloupců (POVINNÉ)
+- Datum formát: YYYY-MM-DD
+- Gender: male / female / other (nebo prázdné)
 
-# Build EXE
-pyinstaller --onefile --windowed --name="Event_Reminder_System" main.py
 
-# Output: dist/Event_Reminder_System.exe
+═══════════════════════════════════════════════════════════════════════
+KONTAKT A PODPORA
+═══════════════════════════════════════════════════════════════════════
 
-📞 CONTACT & SUPPORT
+Autor: Maxim Mazuret
+Email: cortaget@gmail.com
+Škola: Střední průmyslová škola elektrotechnická, Praha 2, Ječná 30
+Verze: 1.0
+Datum: 11.01.2026
 
-Author: [TVOJE JMÉNO]
-Email: [TVŮJ EMAIL]
-School: [NÁZEV ŠKOLY]
-Date: 11.01.2026
-Version: 1.0
+Jedná se o školní projekt vytvořený pro předmět PV.
 
-© 2026 - Školní projekt vytvořený pro vzdělávací účely
+═══════════════════════════════════════════════════════════════════════
