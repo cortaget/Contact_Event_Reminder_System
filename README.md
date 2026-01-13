@@ -142,22 +142,12 @@ Formáty:
     192.168.1.10 nebo server.domena.cz - vzdálený server
 
 2. DATABASE - Název databáze
-Kde najít:
 
 V SQL Server Management Studio:
 
-    Připojte se k serveru
+    Zvolte nazev databaze(nechte defaultne)
 
-    Rozbalte složku Databases
 
-    Vidíte seznam všech databází
-
-    Poznamenejte si přesný název (case-sensitive!)
-
-PowerShell:
-
-powershell
-sqlcmd -S .\SQLEXPRESS -Q "SELECT name FROM sys.databases"
 
 3. DRIVER - ODBC ovladač
 Kde zjistit nainstalované ovladače:
