@@ -13,9 +13,10 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
         self.success = False
 
         self.title("⚙️ Konfigurace databáze")
-        self.geometry("700x950")
+        self.geometry("700x950")  # Увеличено для новых полей
         self.resizable(False, False)
 
+        # Центрирование окна
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (700 // 2)
         y = (self.winfo_screenheight() // 2) - (950 // 2)
@@ -114,6 +115,8 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
         self.driver_entry.pack(fill="x", pady=(0, 15))
         self.driver_entry.insert(0, self.config.driver)
 
+        # === НОВОЕ: SQL Server Authentication ===
+
         # Separator
         separator = ctk.CTkFrame(form_frame, height=2, fg_color="gray30")
         separator.pack(fill="x", pady=20)
@@ -155,7 +158,12 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
             placeholder_text="např. sa"
         )
         self.username_entry.pack(fill="x", pady=(0, 15))
-        self.username_entry.insert(0, self.config.username)
+
+        # Загрузить значение из конфига
+        if hasattr(self.config, 'username'):
+            self.username_entry.insert(0, self.config.username)
+        else:
+            self.username_entry.insert(0, "sa")
 
         # Password
         self.password_label = ctk.CTkLabel(
@@ -171,10 +179,13 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
             height=35,
             font=ctk.CTkFont(size=13),
             placeholder_text="Zadejte heslo",
-            show="●"
+            show="●"  # Скрыть пароль
         )
         self.password_entry.pack(fill="x", pady=(0, 20))
-        self.password_entry.insert(0, self.config.password)
+
+        # Загрузить значение из конфига
+        if hasattr(self.config, 'password'):
+            self.password_entry.insert(0, self.config.password)
 
         # Info label
         self.auth_info_label = ctk.CTkLabel(
@@ -239,6 +250,7 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
     def toggle_auth_mode(self):
         """Переключить режим аутентификации"""
         if self.trusted_connection_var.get():
+            # Windows Authentication - отключить SQL поля
             self.username_entry.configure(state="disabled", fg_color="gray20")
             self.password_entry.configure(state="disabled", fg_color="gray20")
             self.username_label.configure(text_color="gray50")
@@ -248,12 +260,13 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
                 text_color="gray"
             )
         else:
+            # SQL Server Authentication - включить поля
             self.username_entry.configure(state="normal", fg_color=["#F9F9FA", "#343638"])
             self.password_entry.configure(state="normal", fg_color=["#F9F9FA", "#343638"])
             self.username_label.configure(text_color="white")
             self.password_label.configure(text_color="white")
             self.auth_info_label.configure(
-                text="ℹ️ Používá se SQL Server login. Ujistěte se, že Mixed Mode je povolen.",
+                text="ℹ️ Používá se SQL Server login. Ujistěte se, že Mixed Mode Authentication je povolen na serveru.",
                 text_color="orange"
             )
 
@@ -269,15 +282,23 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
 
+        # Валидация
         if not server or not driver:
-            self.status_label.configure(text="❌ Vyplňte server a driver!", text_color="red")
+            self.status_label.configure(
+                text="❌ Vyplňte server a driver!",
+                text_color="red"
+            )
             return
 
         if not trusted and not username:
-            self.status_label.configure(text="❌ Zadejte login nebo použijte Windows Auth!", text_color="red")
+            self.status_label.configure(
+                text="❌ Zadejte uživatelské jméno nebo použijte Windows Authentication!",
+                text_color="red"
+            )
             return
 
         try:
+            # Строка подключения
             conn_str = f'DRIVER={{{driver}}};SERVER={server};DATABASE={database};'
             if trusted:
                 conn_str += 'Trusted_Connection=yes;'
@@ -287,18 +308,33 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
             conn = pyodbc.connect(conn_str, timeout=10)
             conn.close()
 
-            self.status_label.configure(text="✅ Připojení úspěšné!", text_color="green")
+            self.status_label.configure(
+                text="✅ Připojení úspěšné! SQL Server je dostupný.",
+                text_color="green"
+            )
 
         except pyodbc.Error as e:
             error_msg = str(e)
             if "18456" in error_msg:
-                self.status_label.configure(text="❌ Chybné přihlašovací údaje.", text_color="red")
+                self.status_label.configure(
+                    text="❌ Chybné přihlašovací údaje. Zkontrolujte login a heslo.",
+                    text_color="red"
+                )
             elif "08001" in error_msg:
-                self.status_label.configure(text="❌ Nelze se připojit k serveru.", text_color="red")
+                self.status_label.configure(
+                    text="❌ Nelze se připojit k serveru. Zkontrolujte název serveru a port.",
+                    text_color="red"
+                )
             else:
-                self.status_label.configure(text=f"❌ Chyba: {error_msg[:70]}...", text_color="red")
+                self.status_label.configure(
+                    text=f"❌ Chyba: {error_msg[:70]}...",
+                    text_color="red"
+                )
         except Exception as e:
-            self.status_label.configure(text=f"❌ Chyba: {str(e)[:70]}...", text_color="red")
+            self.status_label.configure(
+                text=f"❌ Neočekávaná chyba: {str(e)[:70]}...",
+                text_color="red"
+            )
 
     def save_and_continue(self):
         """Сохранить настройки и продолжить"""
@@ -309,14 +345,22 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
 
+        # Валидация
         if not server or not database or not driver:
-            self.status_label.configure(text="❌ Vyplňte povinná pole!", text_color="red")
+            self.status_label.configure(
+                text="❌ Vyplňte všechna povinná pole (server, databáze, driver)!",
+                text_color="red"
+            )
             return
 
         if not trusted and not username:
-            self.status_label.configure(text="❌ Zadejte login!", text_color="red")
+            self.status_label.configure(
+                text="❌ Zadejte uživatelské jméno nebo použijte Windows Authentication!",
+                text_color="red"
+            )
             return
 
+        # Обновить config
         self.config.server = server
         self.config.database = database
         self.config.driver = driver
@@ -324,26 +368,36 @@ class DatabaseConfigWindow(ctk.CTkToplevel):
         self.config.username = username
         self.config.password = password
 
+        # Сохранить в файл
         try:
             self.config.save()
-            self.status_label.configure(text="✅ Uloženo!", text_color="green")
+            self.status_label.configure(
+                text="✅ Konfigurace uložena!",
+                text_color="green"
+            )
+
             self.success = True
             self.after(500, self.destroy)
+
         except Exception as e:
-            self.status_label.configure(text=f"❌ Chyba: {str(e)[:70]}...", text_color="red")
+            self.status_label.configure(
+                text=f"❌ Chyba ukládání: {str(e)[:70]}...",
+                text_color="red"
+            )
 
     def on_cancel(self):
-        """Отмена"""
+        """Отмена - закрыть приложение"""
         try:
             from tkinter import messagebox
             result = messagebox.askyesno(
                 "Ukončit aplikaci",
-                "Opravdu chcete ukončit bez nastavení databáze?",
+                "Opravdu chcete ukončit aplikaci bez nastavení databáze?",
                 icon="warning"
             )
             if result:
                 self.success = False
                 self.destroy()
         except:
+            # Fallback если messagebox не работает
             self.success = False
             self.destroy()
