@@ -1,11 +1,24 @@
 {
     "database": {
+<<<<<<< HEAD
         "server": ".\\SQLEXPRESS",
         "database": "Contact_Event_Reminder_System",
         "driver": "ODBC Driver 17 for SQL Server",
         "trusted_connection": true
+=======
+        "server": "localhost",
+        "database": "Contact_Event_Reminder_System",
+        "driver": "ODBC Driver 17 for SQL Server",
+        "trusted_connection": false,
+        "username": "sa",
+        "password": "YourPassword123"
+>>>>>>> 4113ecb (fix)
     },
     "settings": {
         "default_reminder_days": 7
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 4113ecb (fix)
