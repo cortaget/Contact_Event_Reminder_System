@@ -105,63 +105,196 @@ STRUKTURA SOUBORU:
 POPIS PARAMETRŮ:
 ----------------
 
-[database]
-  "server": ".\\SQLEXPRESS"
-    └─ Název SQL Server instance
-       Možnosti:
-       • "." = localhost (výchozí instance)
-       • ".\\SQLEXPRESS" = SQL Server Express (pojmenovaná instance)
-       • "localhost" = to samé jako "."
-       • "192.168.1.100" = vzdálený server (IP adresa)
-       • "SERVER-PC\\SQLEXPRESS" = vzdálený pojmenovaný server
-    
-  "database": "Contact_Event_Reminder_System"
-    └─ Název databáze (NEMĚŇTE, pokud nevíte co děláte)
-    
-  "driver": "ODBC Driver 17 for SQL Server"
-    └─ Název ODBC driveru
-       Možnosti:
-       • "ODBC Driver 17 for SQL Server" (doporučeno)
-       • "ODBC Driver 18 for SQL Server" (novější verze)
-       • "SQL Server" (starší, nedoporučeno)
-    
-  "trusted_connection": true
-    └─ Použít Windows Authentication (ověření pomocí Windows účtu)
-       • true = ANO, použít Windows přihlášení (DOPORUČENO)
-       • false = NE, použít SQL Server Authentication
-                 (vyžaduje username a password - NENÍ IMPLEMENTOVÁNO)
+1. SERVER - Název SQL Server instance
+Kde najít:
+Varianta A: SQL Server Management Studio (SSMS)
+Otevřete SSMS
 
-[settings]
-  "default_reminder_days": 7
-    └─ Výchozí počet dní před událostí pro připomínku
-       • Číslo 1-365
-       • Příklad: 7 = připomenout 7 dní předem
-       • Lze změnit i v aplikaci v sekci "Nastavení"
+
+V okně připojení vidíte název serveru nahoře
+
+
+Formát: .\SQLEXPRESS nebo LOCALHOST\SQLEXPRESS nebo NázevPočítače\SQLEXPRESS
+
+
+Varianta B: PowerShell/Příkazový řádek
+powershell
+sqlcmd -L
+
+Zobrazí seznam všech SQL Server instancí v síti.
+Varianta C: Services (Služby)
+Stiskněte Win + R → napište services.msc
+
+
+Hledejte službu SQL Server (SQLEXPRESS) nebo SQL Server (MSSQLSERVER)
+
+
+Název v závorkách je název instance
+
+
+Formáty:
+. nebo localhost nebo (local) - lokální server
+
+
+.\SQLEXPRESS - lokální pojmenovaná instance
+
+
+192.168.1.10 nebo server.domena.cz - vzdálený server
+
+
+
+2. DATABASE - Název databáze
+Kde najít:
+V SQL Server Management Studio:
+Připojte se k serveru
+
+
+Rozbalte složku Databases
+
+
+Vidíte seznam všech databází
+
+
+Poznamenejte si přesný název (case-sensitive!)
+
+
+PowerShell:
+powershell
+sqlcmd -S .\SQLEXPRESS -Q "SELECT name FROM sys.databases"
+
+
+3. DRIVER - ODBC ovladač
+​
+Kde zjistit nainstalované ovladače:
+Varianta A: ODBC Data Source Administrator
+powershell
+odbcad32
+
+Otevře se okno "Správce zdrojů dat ODBC"
+
+
+Karta Drivers (Ovladače)
+
+
+Hledejte: ODBC Driver 17 for SQL Server nebo ODBC Driver 18 for SQL Server
+
+
+Varianta B: PowerShell
+powershell
+Get-OdbcDriver | Where-Object {$_.Name -like "*SQL Server*"}
+
+Pokud ovladač NENÍ nainstalovaný:
+Stáhněte a nainstalujte:
+​
+ODBC Driver 17: https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server
+
+
+Spusťte instalátor .exe
+
+
+Po instalaci ověřte příkazem odbcad32
+
+
+Podporované názvy:
+ODBC Driver 17 for SQL Server ✅
+
+
+ODBC Driver 18 for SQL Server ✅
+
+
+SQL Server (starší nativní ovladač)
+
+
+
+4. TRUSTED_CONNECTION - Typ autentizace
+Co to znamená:
+true = Windows Authentication (integrovaná autentizace, bez hesla)
+
+
+false = SQL Server Authentication (vyžaduje username + password)
+
+
+Jak zjistit jaký typ použít:
+Windows Authentication (true):
+Používá vaše přihlášení k Windows
+
+
+NEPOTŘEBUJE username/password
+
+
+Funguje pouze pokud SQL Server povoluje Windows autentizaci
+
+
+Bezpečnější pro lokální aplikace
+
+
+SQL Server Authentication (false):
+Používá SQL Server účty (např. sa)
+
+
+VYŽADUJE username a password
+
+
+Musí být povoleno v SQL Serveru
+
+
+Kontrola v SSMS:
+Pravý klik na server → Properties
+
+
+Stránka Security
+
+
+Podívejte se na Server authentication:
+
+
+Windows Authentication mode - pouze Windows účty
+
+
+SQL Server and Windows Authentication mode - obojí ✅
+
+
+
+5. USERNAME - Uživatelské jméno
+Defaultní účty:
+sa - System Administrator (výchozí admin účet)
+
+
+Vaše vlastní SQL Server účty (ve skole je to heslo je student)
+
+
+Kde najít seznam účtů (v SSMS):
+Rozbalte Security → Logins
+
+
+Vidíte seznam všech uživatelů
+
+
+Poznamenejte si přesné jméno
+
+
+6. PASSWORD - Heslo
+Pro účet sa:
+Heslo jste nastavili při instalaci SQL Serveru
+
+
+
+
+7. DEFAULT_REMINDER_DAYS - Nastavení aplikace
+Toto je parametr vaší aplikace, NENÍ součástí SQL Serveru:
+7 = zobrazit připomínky 7 dní dopředu
+
+
+Můžete nastavit libovolné číslo
+
 
 
 PŘÍKLADY KONFIGURACE:
 ---------------------
-
-1. LOKÁLNÍ SQL EXPRESS (nejčastější):
+LOKÁLNÍ SQL EXPRESS (nejčastější):
 {
     "database": {
         "server": ".\\SQLEXPRESS",
-        ...
-    }
-}
-
-2. LOKÁLNÍ VÝCHOZÍ INSTANCE:
-{
-    "database": {
-        "server": ".",
-        ...
-    }
-}
-
-3. VZDÁLENÝ SERVER:
-{
-    "database": {
-        "server": "192.168.1.50\\SQLEXPRESS",
         ...
     }
 }
